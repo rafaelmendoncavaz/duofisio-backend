@@ -12,3 +12,116 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Sex {
+  Masculino
+  Feminino
+}
+
+enum AppointmentStatus {
+  SOLICITADO
+  CONFIRMADO
+  CANCELADO
+  FINALIZADO
+}
+
+model Employees {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  appointments Appointment[]
+
+  @@map("employee")
+}
+
+model Patients {
+  id String @id @default(uuid())
+  name String
+  cpf String @unique
+  dateOfBirth DateTime
+  phone String?
+  email String? @unique
+  sex Sex?
+  profession String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clinicalData ClinicalData[]
+  address Address @relation(fields: [addressId], references: [id])
+  addressId String
+  adultResponsible AdultResponsible? @relation(fields: [adultResponsibleId], references: [id])
+  adultResponsibleId String?
+  appointments Appointment[]
+
+  @@map("patient")
+}
+
+model ClinicalData {
+  id String @id @default(uuid())
+  cid String
+  covenant String?
+  expires DateTime?
+  CNS Int?
+  allegation String
+  diagnosis String
+
+  // Relations
+  patient Patients @relation(fields: [patientId], references: [id])
+  patientId String
+
+  @@map("clinical_data")
+}
+
+model Address {
+  id String @id @default(uuid())
+  cep String
+  street String
+  number Int
+  complement String?
+  neighborhood String
+  city String
+  state String
+
+  // Relations
+  patients Patients[]
+  adultResponsible AdultResponsible?
+
+  @@map("address")
+}
+
+model AdultResponsible {
+  id String @id @default(uuid())
+  name String
+  cpf String @unique
+  phone String
+  email String @unique
+
+  // Relations
+  address Address @relation(fields: [addressId], references: [id])
+  addressId String @unique
+  patient Patients[]
+
+  @@map("adult_responsible")
+}
+
+model Appointment {
+  id String @id @default(uuid())
+  appointmentDate DateTime
+  status AppointmentStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patient Patients @relation(fields: [patientId], references: [id])
+  patientId String
+  employee Employees @relation(fields: [employeeId], references: [id])
+  employeeId String
+
+  @@map("appointments")
+}
