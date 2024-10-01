@@ -12,6 +12,8 @@ import {
 } from "fastify-type-provider-zod"
 import { auth } from "../middlewares/auth"
 import { loginAuth } from "../routes/login-auth"
+import { errorHandler } from "../routes/_errors/error-handler"
+import { addPatient } from "../routes/patient/add-patient"
 
 dotenv.config()
 
@@ -19,6 +21,7 @@ export const app = fastify().withTypeProvider<ZodTypeProvider>()
 
 app.setSerializerCompiler(serializerCompiler)
 app.setValidatorCompiler(validatorCompiler)
+app.setErrorHandler(errorHandler)
 
 app.register(fastifySwagger, {
     openapi: {
@@ -50,9 +53,9 @@ app.register(fastifyJwt, {
 
 app.register(fastifyCors)
 
-app.register(auth)
-
 app.register(loginAuth)
+
+app.register(addPatient)
 
 app.listen({
     port: Number(process.env.PORT),

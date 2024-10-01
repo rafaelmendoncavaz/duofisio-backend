@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod"
 import { authLoginSchema, statusAuthLoginSchema } from "../schema/schema"
 import { prisma } from "../../prisma/db"
 import { compare } from "bcrypt"
+import { Unauthorized } from "./_errors/route-error"
 
 export async function loginAuth(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
@@ -25,13 +26,13 @@ export async function loginAuth(app: FastifyInstance) {
             })
 
             if (!employeeMail || employeeMail.password === null) {
-                throw new Error("Invalid credentials")
+                throw new Unauthorized("Invalid credentials")
             }
 
             const validatePassword = await compare(password, employeeMail.password)
 
             if (!validatePassword) {
-                throw new Error("Invalid credentials")
+                throw new Unauthorized("Invalid credentials")
             }
 
             const token = await response.jwtSign(
