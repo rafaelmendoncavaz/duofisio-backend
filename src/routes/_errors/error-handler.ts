@@ -1,6 +1,6 @@
 import { ZodError } from "zod"
 import type { FastifyErrorHandler } from "../../types/types"
-import { BadRequest, Unauthorized } from "./route-error"
+import { BadRequest, NotFound, Unauthorized } from "./route-error"
 
 export const errorHandler: FastifyErrorHandler = (error, request, response) => {
     if (error instanceof ZodError) {
@@ -18,6 +18,12 @@ export const errorHandler: FastifyErrorHandler = (error, request, response) => {
 
     if (error instanceof Unauthorized) {
         return response.status(401).send({
+            message: error.message,
+        })
+    }
+
+    if (error instanceof NotFound) {
+        return response.status(404).send({
             message: error.message,
         })
     }

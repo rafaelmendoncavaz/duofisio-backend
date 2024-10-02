@@ -7,6 +7,6 @@ export interface TypeUserPayload {
     email: string
 }
 
+export type FastifyErrorHandler = FastifyInstance["errorHandler"]
 export type TypeAuthLogin = z.infer<typeof authLoginSchema>
 export type TypePatient = z.infer<typeof createPatientSchema>
-export type FastifyErrorHandler = FastifyInstance["errorHandler"]

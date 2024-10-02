@@ -14,6 +14,8 @@ import { auth } from "../middlewares/auth"
 import { loginAuth } from "../routes/login-auth"
 import { errorHandler } from "../routes/_errors/error-handler"
 import { addPatient } from "../routes/patient/add-patient"
+import { getPatients } from "../routes/patient/get-patients"
+import { getPatient } from "../routes/patient/get-patient"
 
 dotenv.config()
 
@@ -53,9 +55,13 @@ app.register(fastifyJwt, {
 
 app.register(fastifyCors)
 
+// Employee Routes
 app.register(loginAuth)
 
+// Patient Routes
 app.register(addPatient)
+app.register(getPatients)
+app.register(getPatient)
 
 app.listen({
     port: Number(process.env.PORT),

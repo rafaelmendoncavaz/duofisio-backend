@@ -40,11 +40,12 @@ export async function addPatient(app: FastifyInstance) {
                 const checkUser = await prisma.patients.findUnique({
                     where: {
                         cpf,
+                        email,
                     },
                 })
 
-                if (checkUser) {
-                    throw new BadRequest("Já existe um usuário cadastrado com este CPF")
+                if (checkUser || email) {
+                    throw new BadRequest("Já existe um usuário cadastrado com este CPF/Email")
                 }
 
                 const patient = await prisma.patients.create({
