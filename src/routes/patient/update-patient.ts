@@ -1,54 +1,58 @@
 import type { FastifyInstance } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { createPatientSchema, statusCreatePatientSchema } from "../../schema/schema"
+import { getPatientDataSchema, updatePatientSchema } from "../../schema/schema"
 import { prisma } from "../../../prisma/db"
 import { auth } from "../../middlewares/auth"
 import { BadRequest } from "../_errors/route-error"
 
-export async function addPatient(app: FastifyInstance) {
+export async function updatePatient(app: FastifyInstance): Promise<void> {
     app.withTypeProvider<ZodTypeProvider>()
         .register(auth)
-        .post(
-            "/patients",
+        .put(
+            "/patients/:id",
             {
                 schema: {
                     tags: ["Patients"],
-                    summary: "Create a new patient",
+                    summary: "Update patient data",
                     security: [
                         {
                             bearerAuth: [],
                         },
                     ],
-                    body: createPatientSchema,
-                    response: statusCreatePatientSchema,
+                    body: updatePatientSchema,
+                    params: getPatientDataSchema,
                 },
             },
             async (request, response) => {
-                const {
-                    name,
-                    cpf,
-                    dateOfBirth,
-                    sex,
-                    phone,
-                    email,
-                    profession,
-                    address,
-                    adultResponsible,
-                    clinicalData,
-                } = request.body
+                const patientId = request.params.id
+                const { name, cpf, dateOfBirth, sex, phone, email, profession, address, adultResponsible } =
+                    request.body
 
-                const checkUser = await prisma.patients.findUnique({
+                const isPatientValid = await prisma.patients.findFirst({
                     where: {
-                        cpf,
-                        email,
+                        id: patientId,
                     },
                 })
 
-                if (checkUser) {
-                    throw new BadRequest("Já existe um paciente cadastrado com este CPF/Email")
+                if (!isPatientValid) {
+                    throw new BadRequest("Este paciente não existe")
                 }
 
-                const patient = await prisma.patients.create({
+                const isCPForEmailValid = await prisma.patients.findFirst({
+                    where: {
+                        OR: [{ cpf: { equals: cpf } }, { email: { equals: email } }],
+                        id: { not: patientId },
+                    },
+                })
+
+                if (isCPForEmailValid) {
+                    throw new BadRequest("Um destes dados já está sendo usado por outro paciente: CPF, Email")
+                }
+
+                await prisma.patients.update({
+                    where: {
+                        id: patientId,
+                    },
                     data: {
                         name,
                         cpf,
@@ -58,7 +62,7 @@ export async function addPatient(app: FastifyInstance) {
                         email,
                         profession,
                         address: {
-                            create: {
+                            update: {
                                 cep: address.cep,
                                 street: address.street,
                                 number: address.number,
@@ -70,13 +74,13 @@ export async function addPatient(app: FastifyInstance) {
                         },
                         adultResponsible: adultResponsible
                             ? {
-                                  create: {
+                                  update: {
                                       name: adultResponsible.name,
                                       cpf: adultResponsible.cpf,
                                       phone: adultResponsible.phone,
                                       email: adultResponsible.email,
                                       address: {
-                                          create: {
+                                          update: {
                                               cep: adultResponsible.address.cep,
                                               street: adultResponsible.address.street,
                                               number: adultResponsible.address.number,
@@ -89,31 +93,14 @@ export async function addPatient(app: FastifyInstance) {
                                   },
                               }
                             : undefined,
-                        clinicalData: {
-                            create: {
-                                cid: clinicalData.cid,
-                                covenant: clinicalData.covenant,
-                                expires: clinicalData.expires,
-                                CNS: clinicalData.CNS,
-                                allegation: clinicalData.allegation,
-                                diagnosis: clinicalData.diagnosis,
-                            },
-                        },
                     },
                     include: {
-                        clinicalData: true,
                         address: true,
-                        adultResponsible: {
-                            include: {
-                                address: true,
-                            },
-                        },
+                        adultResponsible: true,
                     },
                 })
 
-                return response.status(201).send({
-                    patientId: patient.id,
-                })
+                return response.status(204).send()
             }
         )
 }

@@ -16,6 +16,8 @@ import { errorHandler } from "../routes/_errors/error-handler"
 import { addPatient } from "../routes/patient/add-patient"
 import { getPatients } from "../routes/patient/get-patients"
 import { getPatient } from "../routes/patient/get-patient"
+import { updatePatient } from "../routes/patient/update-patient"
+import { deletePatient } from "../routes/patient/delete-patient"
 
 dotenv.config()
 
@@ -62,6 +64,8 @@ app.register(loginAuth)
 app.register(addPatient)
 app.register(getPatients)
 app.register(getPatient)
+app.register(updatePatient)
+app.register(deletePatient)
 
 app.listen({
     port: Number(process.env.PORT),

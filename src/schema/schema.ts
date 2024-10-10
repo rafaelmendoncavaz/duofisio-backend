@@ -27,7 +27,7 @@ export const addressSchema = z.object({
     cep: z.string(),
     street: z.string(),
     number: z.coerce.number(),
-    complement: z.string().nullable(),
+    complement: z.string().optional(),
     neighborhood: z.string(),
     city: z.string(),
     state: z.string(),
@@ -42,7 +42,7 @@ export const adultResponsibleSchema = z
         email: z.string().email(),
         address: addressSchema,
     })
-    .nullable()
+    .optional()
 
 // Create Patient Data
 export const createPatientSchema = z.object({
@@ -109,8 +109,32 @@ export const statusPatientDataSchema = {
             profession: z.string().nullable(),
             createdAt: z.coerce.date(),
             updatedAt: z.coerce.date(),
-            address: addressSchema,
-            adultResponsible: adultResponsibleSchema,
+            address: z.object({
+                cep: z.string(),
+                street: z.string(),
+                number: z.coerce.number(),
+                complement: z.string().nullable(),
+                neighborhood: z.string(),
+                city: z.string(),
+                state: z.string(),
+            }),
+            adultResponsible: z
+                .object({
+                    name: z.string(),
+                    cpf: z.string(),
+                    phone: z.string(),
+                    email: z.string().email(),
+                    address: z.object({
+                        cep: z.string(),
+                        street: z.string(),
+                        number: z.coerce.number(),
+                        complement: z.string().nullable(),
+                        neighborhood: z.string(),
+                        city: z.string(),
+                        state: z.string(),
+                    }),
+                })
+                .nullable(),
             clinicalData: z.array(
                 z.object({
                     id: z.string().uuid(),
@@ -139,3 +163,16 @@ export const statusPatientDataSchema = {
         }),
     }),
 }
+
+// Update Patient Data
+export const updatePatientSchema = z.object({
+    name: z.string(),
+    cpf: z.string(),
+    dateOfBirth: z.coerce.date(),
+    phone: z.string().optional(),
+    email: z.string().email().optional(),
+    sex: z.union([z.literal("Masculino"), z.literal("Feminino")]).optional(),
+    profession: z.string().optional(),
+    address: addressSchema,
+    adultResponsible: adultResponsibleSchema,
+})

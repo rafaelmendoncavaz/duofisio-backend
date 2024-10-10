@@ -53,9 +53,9 @@ model Patients {
 
   // Relations
   clinicalData ClinicalData[]
-  address Address @relation(fields: [addressId], references: [id])
+  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
   addressId String
-  adultResponsible AdultResponsible? @relation(fields: [adultResponsibleId], references: [id])
+  adultResponsible AdultResponsible? @relation(fields: [adultResponsibleId], references: [id], onDelete: SetNull)
   adultResponsibleId String?
   appointments Appointment[]
 
@@ -67,12 +67,12 @@ model ClinicalData {
   cid String
   covenant String?
   expires DateTime?
-  CNS Int?
+  CNS BigInt?
   allegation String
   diagnosis String
 
   // Relations
-  patient Patients @relation(fields: [patientId], references: [id])
+  patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId String
 
   @@map("clinical_data")
@@ -103,7 +103,7 @@ model AdultResponsible {
   email String @unique
 
   // Relations
-  address Address @relation(fields: [addressId], references: [id])
+  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
   addressId String @unique
   patient Patients[]
 
@@ -118,7 +118,7 @@ model Appointment {
   updatedAt DateTime @updatedAt
 
   // Relations
-  patient Patients @relation(fields: [patientId], references: [id])
+  patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId String
   employee Employees @relation(fields: [employeeId], references: [id])
   employeeId String

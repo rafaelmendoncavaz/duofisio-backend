@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "clinical_data" ALTER COLUMN "CNS" SET DATA TYPE BIGINT;

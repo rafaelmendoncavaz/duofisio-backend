@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod"
 import { auth } from "../../middlewares/auth"
 import { prisma } from "../../../prisma/db"
 import { statusGetPatientsSchema } from "../../schema/schema"
+import { NotFound } from "../_errors/route-error"
 
 export async function getPatients(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>()
@@ -41,6 +42,10 @@ export async function getPatients(app: FastifyInstance) {
                         },
                     },
                 })
+
+                if (!patients) {
+                    throw new NotFound("Nenhum paciente encontrado")
+                }
 
                 return response.status(200).send({
                     patients,
