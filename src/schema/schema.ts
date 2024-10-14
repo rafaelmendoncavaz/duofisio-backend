@@ -12,6 +12,15 @@ export const statusAuthLoginSchema = {
     }),
 }
 
+export const employeeSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+    name: z.string(),
+    id: z.string().uuid(),
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+})
+
 // Create Clinical Data
 export const clinicalDataSchema = z.object({
     cid: z.string(),
@@ -176,3 +185,116 @@ export const updatePatientSchema = z.object({
     address: addressSchema,
     adultResponsible: adultResponsibleSchema,
 })
+
+// Create an Appointment
+export const createAppointmentSchema = z.object({
+    appointmentDate: z.coerce.date(),
+    status: z.union([z.literal("SOLICITADO"), z.literal("CONFIRMADO")]),
+    patient: z.object({
+        id: z.string().uuid(),
+        name: z.string(),
+        cpf: z.string(),
+    }),
+    employee: z.object({
+        name: z.string(),
+        id: z.string().uuid(),
+    }),
+    reason: z.object({
+        cid: z.string(),
+    }),
+})
+
+export const statusCreateAppointmentSchema = {
+    201: z.object({
+        appointmentId: z.string().uuid(),
+    }),
+    500: z.object({
+        message: z.string(),
+    }),
+}
+
+// Get Appointments
+export const statusGetAppointmentsSchema = {
+    200: z.object({
+        appointments: z.array(
+            z.object({
+                status: z.union([
+                    z.literal("SOLICITADO"),
+                    z.literal("CONFIRMADO"),
+                    z.literal("CANCELADO"),
+                    z.literal("FINALIZADO"),
+                ]),
+                id: z.string(),
+                appointmentDate: z.coerce.date(),
+                employee: z.object({
+                    name: z.string(),
+                }),
+                patient: z.object({
+                    id: z.string().uuid(),
+                    name: z.string(),
+                    cpf: z.string(),
+                }),
+                appointmentReason: z.object({
+                    cid: z.string(),
+                }),
+            })
+        ),
+    }),
+    500: z.object({
+        message: z.string(),
+    }),
+}
+
+// Get Single Patient Appointments
+export const statusGetSinglePatientAppointments = {
+    200: z.object({
+        appointment: z.object({
+            appointmentDate: z.coerce.date(),
+            status: z.union([
+                z.literal("SOLICITADO"),
+                z.literal("CONFIRMADO"),
+                z.literal("CANCELADO"),
+                z.literal("FINALIZADO"),
+            ]),
+            employee: z.object({
+                employeeName: z.string(),
+                employeeId: z.string().uuid(),
+            }),
+            appointmentReason: z.object({
+                cid: z.string(),
+                diagnosis: z.string(),
+            }),
+            patient: z.object({
+                name: z.string(),
+                phone: z.string().nullable(),
+                email: z.string().email().nullable(),
+                patientId: z.string().uuid(),
+            }),
+        }),
+    }),
+    500: z.object({
+        message: z.string(),
+    }),
+}
+
+// Update an appointment
+export const updateAppointmentSchema = z.object({
+    appointmentDate: z.coerce.date(),
+    status: z.union([
+        z.literal("SOLICITADO"),
+        z.literal("CONFIRMADO"),
+        z.literal("CANCELADO"),
+        z.literal("FINALIZADO"),
+    ]),
+    employee: z.object({
+        employeeName: z.string(),
+        employeeId: z.string().uuid(),
+    }),
+})
+
+export const statusUpdateAppointmentSchema = {
+    204: z.null(),
+    500: z.object({
+        message: z.string(),
+    }),
+}

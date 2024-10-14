@@ -18,6 +18,11 @@ import { getPatients } from "../routes/patient/get-patients"
 import { getPatient } from "../routes/patient/get-patient"
 import { updatePatient } from "../routes/patient/update-patient"
 import { deletePatient } from "../routes/patient/delete-patient"
+import { createAppointment } from "../routes/appointments/create-appointment"
+import { getAppointments } from "../routes/appointments/get-appointments"
+import { getAppointment } from "../routes/appointments/get-appointment"
+import { updateAppointment } from "../routes/appointments/update-appointment"
+import { deleteAppointment } from "../routes/appointments/delete-appointment"
 
 dotenv.config()
 
@@ -48,7 +53,7 @@ app.register(fastifySwagger, {
 })
 
 app.register(fastifySwaggerUi, {
-    routePrefix: "/docs",
+    routePrefix: "/api",
 })
 
 app.register(fastifyJwt, {
@@ -66,6 +71,13 @@ app.register(getPatients)
 app.register(getPatient)
 app.register(updatePatient)
 app.register(deletePatient)
+
+// Appointment Routes
+app.register(createAppointment)
+app.register(getAppointments)
+app.register(getAppointment)
+app.register(updateAppointment)
+app.register(deleteAppointment)
 
 app.listen({
     port: Number(process.env.PORT),

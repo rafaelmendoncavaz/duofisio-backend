@@ -74,6 +74,7 @@ model ClinicalData {
   // Relations
   patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId String
+  clinicalAppointment Appointment?
 
   @@map("clinical_data")
 }
@@ -120,8 +121,10 @@ model Appointment {
   // Relations
   patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
   patientId String
-  employee Employees @relation(fields: [employeeId], references: [id])
+  employee Employees @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId String
+  appointmentReason ClinicalData @relation(fields: [appointmentReasonId], references: [id])
+  appointmentReasonId String @unique
 
   @@map("appointments")
 }
