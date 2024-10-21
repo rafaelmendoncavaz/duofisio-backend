@@ -9,7 +9,7 @@ export async function addPatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>()
         .register(auth)
         .post(
-            "/patients",
+            "/dashboard/patients",
             {
                 schema: {
                     tags: ["Patients"],

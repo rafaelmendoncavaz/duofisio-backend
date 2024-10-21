@@ -9,7 +9,7 @@ export async function getPatients(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>()
         .register(auth)
         .get(
-            "/patients",
+            "/dashboard/patients",
             {
                 schema: {
                     tags: ["Patients"],
@@ -28,6 +28,7 @@ export async function getPatients(app: FastifyInstance) {
                         id: true,
                         name: true,
                         phone: true,
+                        cpf: true,
                         sex: true,
                         appointments: {
                             select: {
@@ -42,6 +43,8 @@ export async function getPatients(app: FastifyInstance) {
                         },
                     },
                 })
+
+                console.log(patients)
 
                 if (!patients) {
                     throw new NotFound("Nenhum paciente encontrado")

@@ -9,7 +9,7 @@ export async function deleteAppointment(app: FastifyInstance): Promise<void> {
     app.withTypeProvider<ZodTypeProvider>()
         .register(auth)
         .delete(
-            "/appointments/:id",
+            "/dashboard/appointments/:id",
             {
                 schema: {
                     tags: ["Appointments"],

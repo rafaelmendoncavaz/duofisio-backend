@@ -9,7 +9,7 @@ export async function deletePatient(app: FastifyInstance): Promise<void> {
     app.withTypeProvider<ZodTypeProvider>()
         .register(auth)
         .delete(
-            "/patients/:id",
+            "/dashboard/patients/:id",
             {
                 schema: {
                     tags: ["Patients"],

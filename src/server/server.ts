@@ -1,6 +1,7 @@
 import dotenv from "dotenv"
 import fastifyCors from "@fastify/cors"
 import fastifyJwt from "@fastify/jwt"
+import cookie, { type FastifyCookieOptions } from "@fastify/cookie"
 import fastifySwagger from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
 import fastify from "fastify"
@@ -10,7 +11,6 @@ import {
     validatorCompiler,
     type ZodTypeProvider,
 } from "fastify-type-provider-zod"
-import { auth } from "../middlewares/auth"
 import { loginAuth } from "../routes/login-auth"
 import { errorHandler } from "../routes/_errors/error-handler"
 import { addPatient } from "../routes/patient/add-patient"
@@ -23,6 +23,7 @@ import { getAppointments } from "../routes/appointments/get-appointments"
 import { getAppointment } from "../routes/appointments/get-appointment"
 import { updateAppointment } from "../routes/appointments/update-appointment"
 import { deleteAppointment } from "../routes/appointments/delete-appointment"
+import { verifyAuth } from "../routes/verify-auth"
 
 dotenv.config()
 
@@ -56,14 +57,29 @@ app.register(fastifySwaggerUi, {
     routePrefix: "/api",
 })
 
-app.register(fastifyJwt, {
-    secret: `${process.env.JWT_SECRET}`,
+app.register(fastifyCors, {
+    credentials: true,
+    origin: true,
 })
 
-app.register(fastifyCors)
+app.register(fastifyJwt, {
+    secret: `${process.env.JWT_SECRET}`,
+    cookie: {
+        cookieName: "authToken",
+        signed: true,
+    },
+})
+app.register(cookie, {
+    secret: `${process.env.JWT_SECRET}`,
+    hook: "preHandler",
+    parseOptions: {
+        signed: true,
+    },
+} as FastifyCookieOptions)
 
 // Employee Routes
 app.register(loginAuth)
+app.register(verifyAuth)
 
 // Patient Routes
 app.register(addPatient)

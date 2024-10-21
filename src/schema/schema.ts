@@ -12,6 +12,12 @@ export const statusAuthLoginSchema = {
     }),
 }
 
+export const verifyAuthSchema = {
+    200: z.object({
+        authenticated: z.boolean(),
+    }),
+}
+
 export const employeeSchema = z.object({
     email: z.string().email(),
     password: z.string(),
@@ -80,6 +86,7 @@ export const statusGetPatientsSchema = {
             z.object({
                 id: z.string().uuid(),
                 name: z.string(),
+                cpf: z.string(),
                 phone: z.string().nullable(),
                 sex: z.union([z.literal("Masculino"), z.literal("Feminino")]).nullable(),
                 appointments: z.array(

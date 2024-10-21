@@ -7,13 +7,13 @@ declare module "fastify" {
     interface FastifyRequest {
         user: {
             id: string
-            email: string
         }
+        getCurrentUserId(): Promise<string>
+        getValidatedUser(): Promise<void>
     }
 }
 export interface TypeUserPayload {
-    id: string
-    email: string
+    subject: string
 }
 
 export type FastifyErrorHandler = FastifyInstance["errorHandler"]

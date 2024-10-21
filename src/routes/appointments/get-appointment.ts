@@ -9,7 +9,7 @@ export async function getAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>()
         .register(auth)
         .get(
-            "/appointments/:id",
+            "/dashboard/appointments/:id",
             {
                 schema: {
                     tags: ["Appointments"],
