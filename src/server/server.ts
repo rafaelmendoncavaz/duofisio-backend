@@ -24,6 +24,10 @@ import { getAppointment } from "../routes/appointments/get-appointment"
 import { updateAppointment } from "../routes/appointments/update-appointment"
 import { deleteAppointment } from "../routes/appointments/delete-appointment"
 import { verifyAuth } from "../routes/verify-auth"
+import { addClinicalRecord } from "../routes/clinical/add-record"
+import { getClinicalRecords } from "../routes/clinical/get-records"
+import { getSingleClinicalRecord } from "../routes/clinical/get-record"
+import { deleteClinicalRecord } from "../routes/clinical/delete-record"
 
 dotenv.config()
 
@@ -87,6 +91,12 @@ app.register(getPatients)
 app.register(getPatient)
 app.register(updatePatient)
 app.register(deletePatient)
+
+// Clinical Record Routes
+app.register(addClinicalRecord)
+app.register(getClinicalRecords)
+app.register(getSingleClinicalRecord)
+app.register(deleteClinicalRecord)
 
 // Appointment Routes
 app.register(createAppointment)

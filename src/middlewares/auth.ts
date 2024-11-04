@@ -13,11 +13,11 @@ export const auth = fastifyPlugin(async (app: FastifyInstance) => {
 
         request.getCurrentUserId = async () => {
             try {
-                const { subject } = await request.jwtVerify<TypeUserPayload>()
+                const { sub } = await request.jwtVerify<TypeUserPayload>()
 
-                return subject
+                return sub
             } catch {
-                throw new Unauthorized("Invalid token")
+                throw new Unauthorized("Error verifying token")
             }
         }
 
@@ -32,8 +32,16 @@ export const auth = fastifyPlugin(async (app: FastifyInstance) => {
 
             if (!employee) throw new Unauthorized("Usuário inválido")
 
+            const { name, email } = employee
+
             request.user = {
-                id,
+                name,
+                email,
+            }
+
+            return {
+                name,
+                email,
             }
         }
     })

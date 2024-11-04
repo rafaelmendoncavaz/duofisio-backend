@@ -42,6 +42,9 @@ export async function getPatients(app: FastifyInstance) {
                             },
                         },
                     },
+                    orderBy: {
+                        name: "asc",
+                    },
                 })
 
                 console.log(patients)

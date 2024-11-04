@@ -4,7 +4,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod"
 import { authLoginSchema, statusAuthLoginSchema } from "../schema/schema"
 import { prisma } from "../../prisma/db"
 import { compare } from "bcrypt"
-import { Unauthorized } from "./_errors/route-error"
+import { NotFound, Unauthorized } from "./_errors/route-error"
 
 export async function loginAuth(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
@@ -20,25 +20,25 @@ export async function loginAuth(app: FastifyInstance) {
         async (request, response) => {
             const { email, password } = request.body
 
-            const employeeMail = await prisma.employees.findUnique({
+            const employee = await prisma.employees.findUnique({
                 where: {
                     email,
                 },
             })
 
-            if (!employeeMail || employeeMail.password === null) {
-                throw new Unauthorized("Invalid credentials")
+            if (!employee) {
+                throw new NotFound("Usuário não encontrado!")
             }
 
-            const validatePassword = await compare(password, employeeMail.password)
+            const validatePassword = await compare(password, employee.password)
 
             if (!validatePassword) {
-                throw new Unauthorized("Invalid credentials")
+                throw new Unauthorized("Senha inválida!")
             }
 
             const token = await response.jwtSign(
                 {
-                    subject: employeeMail.id,
+                    sub: employee.id,
                 },
                 {
                     sign: {
@@ -51,10 +51,20 @@ export async function loginAuth(app: FastifyInstance) {
                 httpOnly: true,
                 maxAge: 7 * 24 * 60 * 60,
                 path: "/dashboard",
-                sameSite: "strict",
+                sameSite: true,
+                secure: true,
             })
 
-            response.header("Set-Cookie", cookie)
+            response.header("set-cookie", cookie)
+
+            response.setCookie("authToken", token, {
+                httpOnly: true,
+                maxAge: 7 * 24 * 60 * 60,
+                path: "/dashboard",
+                sameSite: true,
+                signed: true,
+                secure: true,
+            })
 
             return response.status(201).send({
                 token,

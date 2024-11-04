@@ -6,14 +6,15 @@ import type { FastifyInstance } from "fastify"
 declare module "fastify" {
     interface FastifyRequest {
         user: {
-            id: string
+            name: string
+            email: string
         }
         getCurrentUserId(): Promise<string>
-        getValidatedUser(): Promise<void>
+        getValidatedUser(id: string): Promise<{ name: string; email: string }>
     }
 }
 export interface TypeUserPayload {
-    subject: string
+    sub: string
 }
 
 export type FastifyErrorHandler = FastifyInstance["errorHandler"]

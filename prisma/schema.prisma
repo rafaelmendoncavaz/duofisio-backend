@@ -67,7 +67,7 @@ model ClinicalData {
   cid String
   covenant String?
   expires DateTime?
-  CNS BigInt?
+  CNS String?
   allegation String
   diagnosis String
 

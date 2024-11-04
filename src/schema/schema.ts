@@ -15,6 +15,10 @@ export const statusAuthLoginSchema = {
 export const verifyAuthSchema = {
     200: z.object({
         authenticated: z.boolean(),
+        user: z.object({
+            name: z.string(),
+            email: z.string().email(),
+        }),
     }),
 }
 
@@ -29,21 +33,24 @@ export const employeeSchema = z.object({
 
 // Create Clinical Data
 export const clinicalDataSchema = z.object({
-    cid: z.string(),
+    cid: z.string().min(1, "Insira o código do CID"),
     covenant: z.string().optional(),
     expires: z.coerce.date().optional(),
-    CNS: z.coerce.number().optional(),
-    allegation: z.string(),
+    CNS: z.string().optional(),
+    allegation: z.string().min(1, "Insira a queixa do paciente"),
     diagnosis: z.string(),
 })
 
 // Create Address Data
 export const addressSchema = z.object({
-    cep: z.string(),
-    street: z.string(),
-    number: z.coerce.number(),
+    cep: z
+        .string()
+        .min(8, "Insira o CEP do paciente")
+        .max(8, "Somente números"),
+    street: z.string().min(3, "Insira o nome da rua"),
+    number: z.coerce.number().min(1, "Insira o número da casa"),
     complement: z.string().optional(),
-    neighborhood: z.string(),
+    neighborhood: z.string().min(1, "Insira o nome da região/bairro"),
     city: z.string(),
     state: z.string(),
 })
@@ -51,18 +58,21 @@ export const addressSchema = z.object({
 // Create Adult Responsible Data
 export const adultResponsibleSchema = z
     .object({
-        name: z.string(),
-        cpf: z.string(),
-        phone: z.string(),
-        email: z.string().email(),
+        name: z.string().min(3, "Insira o nome do responsável"),
+        cpf: z.string().min(11, "O campo CPF do responsável é obrigatório"),
+        phone: z.string().min(9, "Insira um número para contato válido"),
+        email: z.string().email().min(7, "Insira um e-mail válido"),
         address: addressSchema,
     })
     .optional()
 
 // Create Patient Data
 export const createPatientSchema = z.object({
-    name: z.string(),
-    cpf: z.string(),
+    name: z.string().min(2, "Insira um nome para o paciente"),
+    cpf: z
+        .string()
+        .min(11, "O campo CPF é obrigatório")
+        .max(11, "Somente números"),
     dateOfBirth: z.coerce.date(),
     phone: z.string().optional(),
     email: z.string().email().optional(),
@@ -88,7 +98,9 @@ export const statusGetPatientsSchema = {
                 name: z.string(),
                 cpf: z.string(),
                 phone: z.string().nullable(),
-                sex: z.union([z.literal("Masculino"), z.literal("Feminino")]).nullable(),
+                sex: z
+                    .union([z.literal("Masculino"), z.literal("Feminino")])
+                    .nullable(),
                 appointments: z.array(
                     z.object({
                         status: z.union([
@@ -110,6 +122,7 @@ export const statusGetPatientsSchema = {
 
 export const getPatientDataSchema = z.object({
     id: z.string().uuid(),
+    recordId: z.string().uuid().optional(),
 })
 
 export const statusPatientDataSchema = {
@@ -121,7 +134,9 @@ export const statusPatientDataSchema = {
             dateOfBirth: z.coerce.date(),
             phone: z.string().nullable(),
             email: z.string().email().nullable(),
-            sex: z.union([z.literal("Masculino"), z.literal("Feminino")]).nullable(),
+            sex: z
+                .union([z.literal("Masculino"), z.literal("Feminino")])
+                .nullable(),
             profession: z.string().nullable(),
             createdAt: z.coerce.date(),
             updatedAt: z.coerce.date(),
@@ -157,7 +172,7 @@ export const statusPatientDataSchema = {
                     cid: z.string(),
                     covenant: z.string().nullable(),
                     expires: z.coerce.date().nullable(),
-                    CNS: z.coerce.number().nullable(),
+                    CNS: z.string().nullable(),
                     allegation: z.string(),
                     diagnosis: z.string(),
                 })
@@ -303,5 +318,59 @@ export const statusUpdateAppointmentSchema = {
     204: z.null(),
     500: z.object({
         message: z.string(),
+    }),
+}
+
+// Create New Clinical Record
+export const createNewClinicalRecordSchema = z.object({
+    cid: z.string(),
+    covenant: z.string().optional(),
+    expires: z.coerce.date().optional(),
+    allegation: z.string(),
+    diagnosis: z.string(),
+})
+
+export const statusClinicalRecordCreatedSchema = {
+    201: z.object({
+        message: z.string(),
+    }),
+}
+
+// Get Clinical Record List
+export const statusGetClinicalRecordListSchema = {
+    200: z.object({
+        patientClinicalRecord: z.object({
+            clinicalRecordList: z.array(
+                z.object({
+                    id: z.string().uuid(),
+                    cid: z.string().min(1, "Insira o código do CID"),
+                    covenant: z.string().nullable(),
+                    expires: z.coerce.date().nullable(),
+                    CNS: z.string().nullable(),
+                    allegation: z
+                        .string()
+                        .min(1, "Insira a queixa do paciente"),
+                    diagnosis: z.string(),
+                })
+            ),
+            patientName: z.string(),
+            patientId: z.string().uuid(),
+        }),
+    }),
+}
+
+// Get Single Clinical Record
+export const statusGetSingleClinicalRecordSchema = {
+    200: z.object({
+        clinicalRecord: z.object({
+            id: z.string().uuid(),
+            cid: z.string().min(1, "Insira o código do CID"),
+            covenant: z.string().nullable(),
+            expires: z.coerce.date().nullable(),
+            CNS: z.string().nullable(),
+            allegation: z.string().min(1, "Insira a queixa do paciente"),
+            diagnosis: z.string(),
+            patientId: z.string().uuid(),
+        }),
     }),
 }
