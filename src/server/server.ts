@@ -1,7 +1,6 @@
 import dotenv from "dotenv"
 import fastifyCors from "@fastify/cors"
 import fastifyJwt from "@fastify/jwt"
-import cookie, { type FastifyCookieOptions } from "@fastify/cookie"
 import fastifySwagger from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
 import fastify from "fastify"
@@ -68,18 +67,7 @@ app.register(fastifyCors, {
 
 app.register(fastifyJwt, {
     secret: `${process.env.JWT_SECRET}`,
-    cookie: {
-        cookieName: "authToken",
-        signed: true,
-    },
 })
-app.register(cookie, {
-    secret: `${process.env.JWT_SECRET}`,
-    hook: "preHandler",
-    parseOptions: {
-        signed: true,
-    },
-} as FastifyCookieOptions)
 
 // Employee Routes
 app.register(loginAuth)

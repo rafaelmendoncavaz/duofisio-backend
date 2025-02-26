@@ -6,10 +6,10 @@ import { Unauthorized } from "../routes/_errors/route-error"
 
 export const auth = fastifyPlugin(async (app: FastifyInstance) => {
     app.addHook("preHandler", async request => {
-        const token = request.cookies.authToken
-        console.log(`cookie: ${token}`)
+        const { sub } = await request.jwtVerify<TypeUserPayload>()
+        console.log(`JWT: ${sub}`)
 
-        if (!token) throw new Unauthorized("Invalid Access Token")
+        if (!sub) throw new Unauthorized("Invalid Access Token")
 
         request.getCurrentUserId = async () => {
             try {
