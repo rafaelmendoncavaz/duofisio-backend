@@ -1,4 +1,4 @@
-import dotenv from "dotenv"
+import "dotenv/config"
 import fastifyCors from "@fastify/cors"
 import fastifyJwt from "@fastify/jwt"
 import fastifySwagger from "@fastify/swagger"
@@ -27,8 +27,7 @@ import { addClinicalRecord } from "../routes/clinical/add-record"
 import { getClinicalRecords } from "../routes/clinical/get-records"
 import { getSingleClinicalRecord } from "../routes/clinical/get-record"
 import { deleteClinicalRecord } from "../routes/clinical/delete-record"
-
-dotenv.config()
+import { auth } from "../middlewares/auth"
 
 export const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -66,35 +65,49 @@ app.register(fastifyCors, {
 })
 
 app.register(fastifyJwt, {
-    secret: `${process.env.JWT_SECRET}`,
+    secret: process.env.JWT_SECRET as string,
 })
 
 // Employee Routes
-app.register(loginAuth)
-app.register(verifyAuth)
+app.register(loginAuth, {
+    prefix: "/auth",
+})
+app.register(verifyAuth, {
+    prefix: "/auth",
+})
 
-// Patient Routes
-app.register(addPatient)
-app.register(getPatients)
-app.register(getPatient)
-app.register(updatePatient)
-app.register(deletePatient)
+// Protected Routes
+app.register(
+    async protectedRoutes => {
+        protectedRoutes.addHook("preHandler", auth)
 
-// Clinical Record Routes
-app.register(addClinicalRecord)
-app.register(getClinicalRecords)
-app.register(getSingleClinicalRecord)
-app.register(deleteClinicalRecord)
+        // Patient Routes
+        protectedRoutes.register(addPatient)
+        protectedRoutes.register(getPatients)
+        protectedRoutes.register(getPatient)
+        protectedRoutes.register(updatePatient)
+        protectedRoutes.register(deletePatient)
 
-// Appointment Routes
-app.register(createAppointment)
-app.register(getAppointments)
-app.register(getAppointment)
-app.register(updateAppointment)
-app.register(deleteAppointment)
+        // Clinical Record Routes
+        protectedRoutes.register(addClinicalRecord)
+        protectedRoutes.register(getClinicalRecords)
+        protectedRoutes.register(getSingleClinicalRecord)
+        protectedRoutes.register(deleteClinicalRecord)
+
+        // Appointment Routes
+        protectedRoutes.register(createAppointment)
+        protectedRoutes.register(getAppointments)
+        protectedRoutes.register(getAppointment)
+        protectedRoutes.register(updateAppointment)
+        protectedRoutes.register(deleteAppointment)
+    },
+    {
+        prefix: "/dashboard",
+    }
+)
 
 app.listen({
-    port: Number(process.env.PORT),
+    port: Number(process.env.PORT || 3000),
 }).then(() => {
     console.log(`Server is running on port ${process.env.PORT}`)
 })

@@ -2,19 +2,19 @@ import "fastify"
 import type z from "zod"
 import type { authLoginSchema, createPatientSchema } from "../schema/schema"
 import type { FastifyInstance } from "fastify"
+export interface TypeUserPayload {
+    sub: string
+}
+
+interface JwtPayload {
+    id: number
+    email: string
+}
 
 declare module "fastify" {
     interface FastifyRequest {
-        user: {
-            name: string
-            email: string
-        }
-        getCurrentUserId(): Promise<string>
-        getValidatedUser(id: string): Promise<{ name: string; email: string }>
+        user: JwtPayload
     }
-}
-export interface TypeUserPayload {
-    sub: string
 }
 
 export type FastifyErrorHandler = FastifyInstance["errorHandler"]

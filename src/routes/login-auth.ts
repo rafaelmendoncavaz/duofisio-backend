@@ -17,38 +17,57 @@ export async function loginAuth(app: FastifyInstance) {
             },
         },
         async (request, response) => {
-            const { email, password } = request.body
+            const { email, password } = authLoginSchema.parse(request.body)
 
-            const employee = await prisma.employees.findUnique({
-                where: {
-                    email,
-                },
-            })
-
-            if (!employee) {
-                throw new NotFound("Usuário não encontrado!")
-            }
-
-            const validatePassword = await compare(password, employee.password)
-
-            if (!validatePassword) {
-                throw new Unauthorized("Senha inválida!")
-            }
-
-            const token = await response.jwtSign(
-                {
-                    sub: employee.id,
-                },
-                {
-                    sign: {
-                        expiresIn: "7d",
+            try {
+                const user = await prisma.employees.findUnique({
+                    where: {
+                        email,
                     },
-                }
-            )
+                })
 
-            return response.status(201).send({
-                token,
-            })
+                if (!user) {
+                    throw new NotFound("Usuário não encontrado")
+                }
+
+                const isPasswordValid = await compare(password, user.password)
+
+                if (!isPasswordValid) {
+                    throw new Unauthorized("Senha incorreta")
+                }
+
+                // Gera o token JWT
+                const token = await response.jwtSign(
+                    {
+                        id: user.id,
+                        email: user.email,
+                    },
+                    {
+                        expiresIn: "24h",
+                    }
+                )
+
+                return response.status(200).send({
+                    token,
+                })
+            } catch (error) {
+                if (error instanceof NotFound) {
+                    return response.status(404).send({
+                        message: error.message,
+                    })
+                }
+
+                if (error instanceof Unauthorized) {
+                    return response.status(401).send({
+                        message: error.message,
+                    })
+                }
+
+                console.error(error)
+                return response.status(500).send({
+                    message: "Erro no servidor",
+                })
+            }
         }
     )
 }

@@ -10,6 +10,9 @@ export const statusAuthLoginSchema = {
     201: z.object({
         token: z.string(),
     }),
+    500: z.object({
+        message: z.string(),
+    }),
 }
 
 export const verifyAuthSchema = {
