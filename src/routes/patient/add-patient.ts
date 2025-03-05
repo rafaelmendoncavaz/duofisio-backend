@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify"
+import type { FastifyRequest } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
+import type { z } from "zod"
 import {
     createPatientSchema,
     statusCreatePatientSchema,
@@ -7,6 +9,87 @@ import {
 import { prisma } from "../../../prisma/db"
 import { BadRequest } from "../_errors/route-error"
 
+// Tipo do corpo da requisição baseado no schema
+type CreatePatientBody = z.infer<typeof createPatientSchema>
+
+/**
+ * Verifica se já existe um paciente com o mesmo CPF ou email.
+ * @throws {BadRequest} Se o CPF ou email já estiverem cadastrados.
+ */
+async function checkPatientExists(cpf: string): Promise<void> {
+    const existingPatient = await prisma.patients.findUnique({
+        where: {
+            cpf,
+        },
+    })
+
+    if (existingPatient) {
+        throw new BadRequest("CPF já cadastrado")
+    }
+}
+
+/**
+ * Cria os dados aninhados para um novo paciente.
+ */
+function buildPatientData(body: CreatePatientBody) {
+    return {
+        name: body.name,
+        cpf: body.cpf,
+        dateOfBirth: body.dateOfBirth,
+        sex: body.sex,
+        phone: body.phone,
+        email: body.email,
+        profession: body.profession,
+        address: {
+            create: {
+                cep: body.address.cep,
+                street: body.address.street,
+                number: body.address.number,
+                complement: body.address.complement,
+                neighborhood: body.address.neighborhood,
+                city: body.address.city,
+                state: body.address.state,
+            },
+        },
+        adultResponsible: body.adultResponsible
+            ? {
+                  create: {
+                      name: body.adultResponsible.name,
+                      cpf: body.adultResponsible.cpf,
+                      phone: body.adultResponsible.phone,
+                      email: body.adultResponsible.email,
+                      address: {
+                          create: {
+                              cep: body.adultResponsible.address.cep,
+                              street: body.adultResponsible.address.street,
+                              number: body.adultResponsible.address.number,
+                              complement:
+                                  body.adultResponsible.address.complement,
+                              neighborhood:
+                                  body.adultResponsible.address.neighborhood,
+                              city: body.adultResponsible.address.city,
+                              state: body.adultResponsible.address.state,
+                          },
+                      },
+                  },
+              }
+            : undefined,
+        clinicalData: {
+            create: {
+                cid: body.clinicalData.cid,
+                covenant: body.clinicalData.covenant,
+                expires: body.clinicalData.expires,
+                CNS: body.clinicalData.CNS,
+                allegation: body.clinicalData.allegation,
+                diagnosis: body.clinicalData.diagnosis,
+            },
+        },
+    }
+}
+
+/**
+ * Registra a rota para adicionar um novo paciente.
+ */
 export async function addPatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
         "/patients",
@@ -14,100 +97,18 @@ export async function addPatient(app: FastifyInstance) {
             schema: {
                 tags: ["Patients"],
                 summary: "Create a new patient",
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
+                security: [{ bearerAuth: [] }],
                 body: createPatientSchema,
                 response: statusCreatePatientSchema,
             },
         },
-        async (request, response) => {
-            const {
-                name,
-                cpf,
-                dateOfBirth,
-                sex,
-                phone,
-                email,
-                profession,
-                address,
-                adultResponsible,
-                clinicalData,
-            } = request.body
+        async (request: FastifyRequest<{ Body: CreatePatientBody }>, reply) => {
+            const body = request.body
 
-            const checkUser = await prisma.patients.findUnique({
-                where: {
-                    cpf,
-                    email,
-                },
-            })
-
-            if (checkUser) {
-                throw new BadRequest(
-                    "Já existe um paciente cadastrado com este CPF/Email"
-                )
-            }
+            await checkPatientExists(body.cpf)
 
             const patient = await prisma.patients.create({
-                data: {
-                    name,
-                    cpf,
-                    dateOfBirth,
-                    sex,
-                    phone,
-                    email,
-                    profession,
-                    address: {
-                        create: {
-                            cep: address.cep,
-                            street: address.street,
-                            number: address.number,
-                            complement: address.complement,
-                            neighborhood: address.neighborhood,
-                            city: address.city,
-                            state: address.state,
-                        },
-                    },
-                    adultResponsible: adultResponsible
-                        ? {
-                              create: {
-                                  name: adultResponsible.name,
-                                  cpf: adultResponsible.cpf,
-                                  phone: adultResponsible.phone,
-                                  email: adultResponsible.email,
-                                  address: {
-                                      create: {
-                                          cep: adultResponsible.address.cep,
-                                          street: adultResponsible.address
-                                              .street,
-                                          number: adultResponsible.address
-                                              .number,
-                                          complement:
-                                              adultResponsible.address
-                                                  .complement,
-                                          neighborhood:
-                                              adultResponsible.address
-                                                  .neighborhood,
-                                          city: adultResponsible.address.city,
-                                          state: adultResponsible.address.state,
-                                      },
-                                  },
-                              },
-                          }
-                        : undefined,
-                    clinicalData: {
-                        create: {
-                            cid: clinicalData.cid,
-                            covenant: clinicalData.covenant,
-                            expires: clinicalData.expires,
-                            CNS: clinicalData.CNS,
-                            allegation: clinicalData.allegation,
-                            diagnosis: clinicalData.diagnosis,
-                        },
-                    },
-                },
+                data: buildPatientData(body),
                 include: {
                     clinicalData: true,
                     address: true,
@@ -119,9 +120,7 @@ export async function addPatient(app: FastifyInstance) {
                 },
             })
 
-            return response.status(201).send({
-                patientId: patient.id,
-            })
+            return reply.status(201).send({ patientId: patient.id })
         }
     )
 }

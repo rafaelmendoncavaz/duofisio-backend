@@ -26,7 +26,7 @@
 	"files": {
 		"ignore": [
 			"node_modules",
-			"prisma"
+			"prisma/schema.prisma"
 		]
 	}
 }

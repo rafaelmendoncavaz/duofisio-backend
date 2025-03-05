@@ -1,123 +1,138 @@
-import type { FastifyInstance } from "fastify"
+import type { FastifyInstance, FastifyRequest } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
+import type { z } from "zod"
 import { getPatientDataSchema, updatePatientSchema } from "../../schema/schema"
 import { prisma } from "../../../prisma/db"
 import { BadRequest } from "../_errors/route-error"
 
-export async function updatePatient(app: FastifyInstance): Promise<void> {
+// Tipos baseados nos schemas
+type PatientParams = z.infer<typeof getPatientDataSchema>
+type UpdatePatientBody = z.infer<typeof updatePatientSchema>
+
+/**
+ * Verifica se o paciente existe pelo ID.
+ * @throws {BadRequest} Se o paciente não for encontrado.
+ */
+async function checkPatientExists(id: string): Promise<void> {
+    const patient = await prisma.patients.findUnique({
+        where: { id },
+    })
+
+    if (!patient) {
+        throw new BadRequest("Este paciente não existe")
+    }
+}
+
+/**
+ * Verifica se o CPF ou email já estão em uso por outro paciente.
+ * @throws {BadRequest} Se houver duplicata de CPF ou email.
+ */
+async function checkDuplicateCpfOrEmail(
+    id: string,
+    cpf: string,
+    email: string | null
+): Promise<void> {
+    const duplicate = await prisma.patients.findFirst({
+        where: {
+            OR: [{ cpf }, { email }],
+            id: { not: id },
+        },
+    })
+
+    if (duplicate) {
+        throw new BadRequest(
+            "Um destes dados já está sendo usado por outro paciente: CPF, Email"
+        )
+    }
+}
+
+/**
+ * Constrói os dados para atualização do paciente.
+ */
+function buildUpdateData(body: UpdatePatientBody) {
+    return {
+        name: body.name,
+        cpf: body.cpf,
+        dateOfBirth: body.dateOfBirth,
+        sex: body.sex,
+        phone: body.phone,
+        email: body.email,
+        profession: body.profession,
+        address: {
+            update: {
+                cep: body.address.cep,
+                street: body.address.street,
+                number: body.address.number,
+                complement: body.address.complement,
+                neighborhood: body.address.neighborhood,
+                city: body.address.city,
+                state: body.address.state,
+            },
+        },
+        adultResponsible: body.adultResponsible
+            ? {
+                  update: {
+                      name: body.adultResponsible.name,
+                      cpf: body.adultResponsible.cpf,
+                      phone: body.adultResponsible.phone,
+                      email: body.adultResponsible.email,
+                      address: {
+                          update: {
+                              cep: body.adultResponsible.address.cep,
+                              street: body.adultResponsible.address.street,
+                              number: body.adultResponsible.address.number,
+                              complement:
+                                  body.adultResponsible.address.complement,
+                              neighborhood:
+                                  body.adultResponsible.address.neighborhood,
+                              city: body.adultResponsible.address.city,
+                              state: body.adultResponsible.address.state,
+                          },
+                      },
+                  },
+              }
+            : undefined,
+    }
+}
+
+/**
+ * Registra a rota para atualizar os dados de um paciente.
+ */
+export async function updatePatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().put(
         "/patients/:id",
         {
             schema: {
                 tags: ["Patients"],
                 summary: "Update patient data",
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
+                security: [{ bearerAuth: [] }],
                 body: updatePatientSchema,
                 params: getPatientDataSchema,
             },
         },
-        async (request, response) => {
-            const patientId = request.params.id
-            const {
-                name,
-                cpf,
-                dateOfBirth,
-                sex,
-                phone,
-                email,
-                profession,
-                address,
-                adultResponsible,
-            } = request.body
+        async (
+            request: FastifyRequest<{
+                Params: PatientParams
+                Body: UpdatePatientBody
+            }>,
+            reply
+        ) => {
+            const { id } = request.params
+            const body = request.body
 
-            const isPatientValid = await prisma.patients.findFirst({
-                where: {
-                    id: patientId,
-                },
-            })
-
-            if (!isPatientValid) {
-                throw new BadRequest("Este paciente não existe")
-            }
-
-            const isCPForEmailValid = await prisma.patients.findFirst({
-                where: {
-                    OR: [
-                        { cpf: { equals: cpf } },
-                        { email: { equals: email } },
-                    ],
-                    id: { not: patientId },
-                },
-            })
-
-            if (isCPForEmailValid) {
-                throw new BadRequest(
-                    "Um destes dados já está sendo usado por outro paciente: CPF, Email"
-                )
-            }
+            await checkPatientExists(id)
+            await checkDuplicateCpfOrEmail(id, body.cpf, body.email)
 
             await prisma.patients.update({
-                where: {
-                    id: patientId,
-                },
-                data: {
-                    name,
-                    cpf,
-                    dateOfBirth,
-                    sex,
-                    phone,
-                    email,
-                    profession,
-                    address: {
-                        update: {
-                            cep: address.cep,
-                            street: address.street,
-                            number: address.number,
-                            complement: address.complement,
-                            neighborhood: address.neighborhood,
-                            city: address.city,
-                            state: address.state,
-                        },
-                    },
-                    adultResponsible: adultResponsible
-                        ? {
-                              update: {
-                                  name: adultResponsible.name,
-                                  cpf: adultResponsible.cpf,
-                                  phone: adultResponsible.phone,
-                                  email: adultResponsible.email,
-                                  address: {
-                                      update: {
-                                          cep: adultResponsible.address.cep,
-                                          street: adultResponsible.address
-                                              .street,
-                                          number: adultResponsible.address
-                                              .number,
-                                          complement:
-                                              adultResponsible.address
-                                                  .complement,
-                                          neighborhood:
-                                              adultResponsible.address
-                                                  .neighborhood,
-                                          city: adultResponsible.address.city,
-                                          state: adultResponsible.address.state,
-                                      },
-                                  },
-                              },
-                          }
-                        : undefined,
-                },
+                where: { id },
+                data: buildUpdateData(body),
                 include: {
                     address: true,
                     adultResponsible: true,
                 },
             })
 
-            return response.status(204).send()
+            return reply.status(204).send()
         }
     )
 }

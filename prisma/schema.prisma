@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,6 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums
 enum Sex {
   Masculino
   Feminino
@@ -25,106 +23,109 @@ enum AppointmentStatus {
   FINALIZADO
 }
 
+// Modelos
+
 model Employees {
-  id String @id @default(uuid())
-  name String
-  email String @unique
-  password String
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
+  // Relações
   appointments Appointment[]
 
   @@map("employee")
 }
 
 model Patients {
-  id String @id @default(uuid())
-  name String
-  cpf String @unique
-  dateOfBirth DateTime
-  phone String?
-  email String? @unique
-  sex Sex?
-  profession String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String           @id @default(uuid())
+  name              String
+  cpf               String           @unique
+  dateOfBirth       DateTime
+  phone             String?
+  email             String?          @unique
+  sex               Sex?
+  profession        String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  // Relations
-  clinicalData ClinicalData[]
-  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId String
-  adultResponsible AdultResponsible? @relation(fields: [adultResponsibleId], references: [id], onDelete: SetNull)
+  // Relações
+  clinicalData      ClinicalData[]
+  address           Address          @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId         String
+  adultResponsible  AdultResponsible? @relation(fields: [adultResponsibleId], references: [id], onDelete: SetNull)
   adultResponsibleId String?
-  appointments Appointment[]
+  appointments      Appointment[]
 
   @@map("patient")
 }
 
 model ClinicalData {
-  id String @id @default(uuid())
-  cid String
-  covenant String?
-  expires DateTime?
-  CNS String?
+  id         String   @id @default(uuid())
+  cid        String
+  covenant   String?
+  expires    DateTime?
+  CNS        String?
   allegation String
-  diagnosis String
+  diagnosis  String
 
-  // Relations
-  patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId String
-  clinicalAppointment Appointment?
+  // Relações
+  patient    Patients      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId  String
+  appointments Appointment[]  // Ajustado para relação 1:N
 
   @@map("clinical_data")
 }
 
 model Address {
-  id String @id @default(uuid())
-  cep String
-  street String
-  number Int
-  complement String?
+  id          String   @id @default(uuid())
+  cep         String
+  street      String
+  number      Int
+  complement  String?
   neighborhood String
-  city String
-  state String
+  city        String
+  state       String
 
-  // Relations
-  patients Patients[]
+  // Relações
+  patients         Patients[]
   adultResponsible AdultResponsible?
 
   @@map("address")
 }
 
 model AdultResponsible {
-  id String @id @default(uuid())
-  name String
-  cpf String @unique
-  phone String
-  email String @unique
+  id        String   @id @default(uuid())
+  name      String
+  cpf       String   @unique
+  phone     String
+  email     String   @unique
 
-  // Relations
-  address Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId String @unique
-  patient Patients[]
+  // Relações
+  address   Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId String   @unique
+  patient   Patients[]
 
   @@map("adult_responsible")
 }
 
 model Appointment {
-  id String @id @default(uuid())
+  id             String           @id @default(uuid())
   appointmentDate DateTime
-  status AppointmentStatus
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  duration       Int              // Novo: duração em minutos
+  status         AppointmentStatus
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  // Relations
-  patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId String
-  employee Employees @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId String
-  appointmentReason ClinicalData @relation(fields: [appointmentReasonId], references: [id])
-  appointmentReasonId String @unique
+  // Relações
+  patient        Patients         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId      String
+  employee       Employees        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId     String
+  clinicalRecord ClinicalData     @relation(fields: [clinicalRecordId], references: [id])
+  clinicalRecordId String         // Renomeado de appointmentReasonId, removido @unique
 
   @@map("appointments")
 }

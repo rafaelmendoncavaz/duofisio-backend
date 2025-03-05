@@ -1,49 +1,51 @@
-import type { FastifyInstance } from "fastify"
+import type { FastifyInstance, FastifyRequest } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { getPatientDataSchema } from "../../schema/schema"
+import { z } from "zod"
 import { prisma } from "../../../prisma/db"
 import { NotFound } from "../_errors/route-error"
+import { statusDeleteAppointmentSchema } from "../../schema/appointment"
 
-export async function deleteAppointment(app: FastifyInstance): Promise<void> {
+/**
+ * Exclui um agendamento específico.
+ * @throws {NotFound} Se o agendamento não for encontrado.
+ */
+async function deleteAppointmentLogic(appointmentId: string) {
+    const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+    })
+
+    if (!appointment) {
+        throw new NotFound("Agendamento não encontrado")
+    }
+
+    await prisma.appointment.delete({
+        where: { id: appointmentId },
+    })
+}
+
+/**
+ * Registra a rota para excluir um agendamento.
+ */
+export async function deleteAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().delete(
         "/appointments/:id",
         {
             schema: {
                 tags: ["Appointments"],
-                summary: "Delete patient appointment",
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-                params: getPatientDataSchema,
+                summary: "Delete a specific appointment",
+                security: [{ bearerAuth: [] }],
+                params: z.object({
+                    id: z.string().uuid("ID do agendamento deve ser um UUID"),
+                }),
+                response: statusDeleteAppointmentSchema,
             },
         },
-        async (request, response) => {
-            try {
-                const { id: appointmentId } = request.params
+        async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+            const { id } = request.params
 
-                const appointment = await prisma.appointment.findFirst({
-                    where: {
-                        id: appointmentId,
-                    },
-                })
+            await deleteAppointmentLogic(id)
 
-                if (!appointment)
-                    throw new NotFound("Agendamento não encontrado!")
-
-                await prisma.appointment.delete({
-                    where: {
-                        id: appointmentId,
-                    },
-                })
-
-                return response.status(204).send()
-            } catch (error) {
-                return response.status(500).send({
-                    message: JSON.stringify(error),
-                })
-            }
+            return reply.status(204).send()
         }
     )
 }

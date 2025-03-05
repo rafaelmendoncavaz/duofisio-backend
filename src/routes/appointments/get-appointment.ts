@@ -1,84 +1,96 @@
-import type { FastifyInstance } from "fastify"
+import type { FastifyInstance, FastifyRequest } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
+import { z } from "zod"
 import { prisma } from "../../../prisma/db"
-import {
-    getPatientDataSchema,
-    statusGetSinglePatientAppointments,
-} from "../../schema/schema"
 import { NotFound } from "../_errors/route-error"
+import { statusGetSinglePatientAppointments } from "../../schema/appointment"
 
+/**
+ * Busca os detalhes de um agendamento específico.
+ * @throws {NotFound} Se o agendamento não for encontrado.
+ */
+async function getAppointmentById(appointmentId: string) {
+    const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: {
+            id: true,
+            appointmentDate: true,
+            duration: true,
+            status: true,
+            patient: {
+                select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                    email: true,
+                },
+            },
+            employee: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+            clinicalRecord: {
+                select: {
+                    cid: true,
+                    allegation: true,
+                    diagnosis: true,
+                },
+            },
+        },
+    })
+
+    if (!appointment) {
+        throw new NotFound("Agendamento não encontrado")
+    }
+
+    return {
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate,
+        duration: appointment.duration,
+        status: appointment.status,
+        patient: {
+            patientId: appointment.patient.id,
+            name: appointment.patient.name,
+            phone: appointment.patient.phone,
+            email: appointment.patient.email,
+        },
+        employee: {
+            employeeId: appointment.employee.id,
+            employeeName: appointment.employee.name,
+        },
+        appointmentReason: {
+            cid: appointment.clinicalRecord.cid,
+            allegation: appointment.clinicalRecord.allegation,
+            diagnosis: appointment.clinicalRecord.diagnosis,
+        },
+    }
+}
+
+/**
+ * Registra a rota para obter os detalhes de um agendamento específico.
+ */
 export async function getAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
         "/appointments/:id",
         {
             schema: {
                 tags: ["Appointments"],
-                summary: "Get a single patient appointments",
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-                params: getPatientDataSchema,
+                summary: "Get details of a specific appointment",
+                security: [{ bearerAuth: [] }],
+                params: z.object({
+                    id: z.string().uuid("ID do agendamento deve ser um UUID"),
+                }),
                 response: statusGetSinglePatientAppointments,
             },
         },
-        async (request, response) => {
-            try {
-                const { id } = request.params
+        async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
+            const { id } = request.params
 
-                const findAppointment = await prisma.appointment.findFirst({
-                    where: {
-                        id,
-                    },
-                    include: {
-                        patient: true,
-                        appointmentReason: true,
-                        employee: true,
-                    },
-                })
+            const appointment = await getAppointmentById(id)
 
-                if (!findAppointment)
-                    throw new NotFound("Agendamento não encontrado")
-
-                const {
-                    status,
-                    employee: employeeData,
-                    appointmentDate,
-                    appointmentReason: reason,
-                    patient: patientData,
-                } = findAppointment
-                const { cid, diagnosis } = reason
-                const { name, phone, email, id: patientId } = patientData
-                const { name: employeeName, id: employeeId } = employeeData
-
-                const appointment = {
-                    status,
-                    employee: {
-                        employeeName,
-                        employeeId,
-                    },
-                    appointmentDate,
-                    appointmentReason: {
-                        cid,
-                        diagnosis,
-                    },
-                    patient: {
-                        name,
-                        phone,
-                        email,
-                        patientId,
-                    },
-                }
-
-                return response.status(200).send({
-                    appointment,
-                })
-            } catch (error) {
-                return response.status(500).send({
-                    message: JSON.stringify(error),
-                })
-            }
+            return reply.status(200).send({ appointment })
         }
     )
 }
