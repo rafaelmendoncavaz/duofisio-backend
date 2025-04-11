@@ -1,81 +1,20 @@
 import type { FastifyInstance, FastifyRequest } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
 import type { z } from "zod"
-import { startOfDay, endOfDay, addDays, endOfMonth } from "date-fns"
 import { prisma } from "../../../prisma/db"
-import {
-    getAppointmentsQuerySchema,
-    statusGetAppointmentsSchema,
-} from "../../schema/appointment"
-import { BadRequest } from "../_errors/route-error"
+import { statusGetAppointmentsSchema } from "../../schema/appointment"
 
 /**
- * Aplica filtros de data à query de agendamentos.
+ * Busca todos os agendamentos com suas sessões, sem filtros de data.
  */
-function applyDateFilter(query: {
-    filter?: string
-    startDate?: string
-    endDate?: string
-}) {
-    const now = new Date()
-    let start: Date
-    let end: Date
-
-    if (query.startDate && query.endDate) {
-        start = startOfDay(new Date(query.startDate))
-        end = endOfDay(new Date(query.endDate))
-    } else if (query.filter) {
-        switch (query.filter) {
-            case "today":
-                start = startOfDay(now)
-                end = endOfDay(now)
-                break
-            case "tomorrow":
-                start = startOfDay(addDays(now, 1))
-                end = endOfDay(addDays(now, 1))
-                break
-            case "week":
-                start = startOfDay(now)
-                end = endOfDay(addDays(now, 7))
-                break
-            case "month":
-                start = startOfDay(now)
-                end = endOfMonth(now)
-                break
-            default:
-                throw new BadRequest("Filtro inválido")
-        }
-    } else {
-        // Sem filtro: retorna todos os agendamentos
-        return {}
-    }
-
-    return {
-        appointmentDate: {
-            gte: start,
-            lte: end,
-        },
-    }
-}
-
-/**
- * Busca todos os agendamentos com filtros opcionais de data.
- */
-async function getAppointmentsLogic(filterParams: {
-    filter?: string
-    startDate?: string
-    endDate?: string
-}) {
-    const dateFilter = applyDateFilter(filterParams)
-
+async function getAppointmentsLogic() {
     const appointments = await prisma.appointment.findMany({
-        where: dateFilter,
-        orderBy: { appointmentDate: "asc" },
+        orderBy: { createdAt: "asc" },
         select: {
             id: true,
-            appointmentDate: true,
-            duration: true,
-            status: true,
+            totalSessions: true,
+            createdAt: true,
+            updatedAt: true,
             patient: {
                 select: {
                     id: true,
@@ -91,9 +30,21 @@ async function getAppointmentsLogic(filterParams: {
             },
             clinicalRecord: {
                 select: {
+                    id: true,
                     cid: true,
                     allegation: true,
                     diagnosis: true,
+                },
+            },
+            sessions: {
+                orderBy: { sessionNumber: "asc" },
+                select: {
+                    id: true,
+                    appointmentDate: true,
+                    duration: true,
+                    status: true,
+                    sessionNumber: true,
+                    progress: true,
                 },
             },
         },
@@ -101,9 +52,9 @@ async function getAppointmentsLogic(filterParams: {
 
     return appointments.map(appointment => ({
         id: appointment.id,
-        appointmentDate: appointment.appointmentDate,
-        duration: appointment.duration,
-        status: appointment.status,
+        totalSessions: appointment.totalSessions,
+        createdAt: appointment.createdAt,
+        updatedAt: appointment.updatedAt,
         patient: {
             id: appointment.patient.id,
             name: appointment.patient.name,
@@ -111,17 +62,31 @@ async function getAppointmentsLogic(filterParams: {
         },
         employee: {
             name: appointment.employee.name,
+            id: appointment.employee.id,
         },
         appointmentReason: {
+            id: appointment.clinicalRecord.id,
             cid: appointment.clinicalRecord.cid,
             allegation: appointment.clinicalRecord.allegation,
             diagnosis: appointment.clinicalRecord.diagnosis,
         },
+        sessions: appointment.sessions.map(session => ({
+            id: session.id,
+            appointmentDate: new Date(
+                session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
+            )
+                .toISOString()
+                .replace("Z", "-03:00"), // Converte de UTC para UTC-3
+            duration: session.duration,
+            status: session.status,
+            sessionNumber: session.sessionNumber,
+            progress: session.progress,
+        })),
     }))
 }
 
 /**
- * Registra a rota para obter a lista de agendamentos.
+ * Registra a rota para obter a lista de agendamentos com suas sessões.
  */
 export async function getAppointments(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
@@ -129,20 +94,13 @@ export async function getAppointments(app: FastifyInstance) {
         {
             schema: {
                 tags: ["Appointments"],
-                summary:
-                    "Get a list of appointments with optional date filters",
+                summary: "Get a list of appointments with their sessions",
                 security: [{ bearerAuth: [] }],
-                querystring: getAppointmentsQuerySchema,
                 response: statusGetAppointmentsSchema,
             },
         },
-        async (
-            request: FastifyRequest<{
-                Querystring: z.infer<typeof getAppointmentsQuerySchema>
-            }>,
-            reply
-        ) => {
-            const appointments = await getAppointmentsLogic(request.query)
+        async (request, reply) => {
+            const appointments = await getAppointmentsLogic()
             return reply.status(200).send({ appointments })
         }
     )

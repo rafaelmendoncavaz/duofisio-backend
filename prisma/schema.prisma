@@ -97,35 +97,49 @@ model Address {
 }
 
 model AdultResponsible {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   name      String
-  cpf       String   @unique
+  cpf       String        @unique
   phone     String
-  email     String   @unique
+  email     String        @unique
 
   // Relações
-  address   Address  @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId String   @unique
+  address   Address       @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId String        @unique
   patient   Patients[]
 
   @@map("adult_responsible")
 }
 
 model Appointment {
-  id             String           @id @default(uuid())
-  appointmentDate DateTime
-  duration       Int              // Novo: duração em minutos
-  status         AppointmentStatus
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id              	String           @id @default(uuid())            
+  totalSessions  	  Int               
+  createdAt       	DateTime         @default(now())
+  updatedAt       	DateTime         @updatedAt
 
   // Relações
-  patient        Patients         @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId      String
-  employee       Employees        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId     String
-  clinicalRecord ClinicalData     @relation(fields: [clinicalRecordId], references: [id])
-  clinicalRecordId String         // Renomeado de appointmentReasonId, removido @unique
+  sessions	        Session[]
+  patient           Patients         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId         String
+  employee          Employees        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId        String
+  clinicalRecord    ClinicalData     @relation(fields: [clinicalRecordId], references: [id])
+  clinicalRecordId  String         
 
   @@map("appointments")
+}
+
+model Session {
+  id			          String		          @id @default(uuid())
+  status          	AppointmentStatus
+  appointmentDate	  DateTime
+  duration		      Int
+  sessionNumber		  Int
+  progress		      String?
+
+  //Relações
+  appointment		    Appointment	        @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  appointmentId		  String
+
+ @@map("sessions")
 }

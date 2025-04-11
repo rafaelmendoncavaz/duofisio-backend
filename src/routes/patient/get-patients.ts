@@ -4,33 +4,37 @@ import { prisma } from "../../../prisma/db"
 import { statusGetPatientsSchema } from "../../schema/schema"
 import { NotFound } from "../_errors/route-error"
 
-// Configuração dos campos a serem selecionados
-const PATIENTS_SELECT = {
-    id: true,
-    name: true,
-    phone: true,
-    cpf: true,
-    sex: true,
-    appointments: {
-        select: {
-            appointmentDate: true,
-            status: true,
-            employee: {
-                select: {
-                    name: true,
-                },
-            },
-        },
-    },
-}
-
 /**
  * Busca a lista de todos os pacientes ordenados por nome.
  * @throws {NotFound} Se nenhum paciente for encontrado.
  */
 async function fetchAllPatients() {
     const patients = await prisma.patients.findMany({
-        select: PATIENTS_SELECT,
+        select: {
+            id: true,
+            name: true,
+            phone: true,
+            cpf: true,
+            sex: true,
+            appointments: {
+                select: {
+                    id: true,
+                    totalSessions: true,
+                    sessions: {
+                        select: {
+                            id: true,
+                            appointmentDate: true,
+                            status: true,
+                        },
+                    },
+                    employee: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            },
+        },
         orderBy: { name: "asc" },
     })
 

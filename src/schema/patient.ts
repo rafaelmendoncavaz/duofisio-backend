@@ -70,13 +70,20 @@ export const statusGetPatientsSchema = {
                     .nullable(),
                 appointments: z.array(
                     z.object({
-                        status: z.union([
-                            z.literal("SOLICITADO"),
-                            z.literal("CONFIRMADO"),
-                            z.literal("CANCELADO"),
-                            z.literal("FINALIZADO"),
-                        ]),
-                        appointmentDate: z.coerce.date(),
+                        id: z.string().uuid(),
+                        totalSessions: z.number(),
+                        sessions: z.array(
+                            z.object({
+                                id: z.string().uuid(),
+                                status: z.union([
+                                    z.literal("SOLICITADO"),
+                                    z.literal("CONFIRMADO"),
+                                    z.literal("CANCELADO"),
+                                    z.literal("FINALIZADO"),
+                                ]),
+                                appointmentDate: z.date(),
+                            })
+                        ),
                         employee: z.object({
                             name: z.string(),
                         }),
@@ -111,15 +118,29 @@ export const statusPatientDataSchema = {
             appointments: z.array(
                 z.object({
                     id: z.string().uuid(),
-                    appointmentDate: z.coerce.date(),
-                    status: z.union([
-                        z.literal("SOLICITADO"),
-                        z.literal("CONFIRMADO"),
-                        z.literal("CANCELADO"),
-                        z.literal("FINALIZADO"),
-                    ]),
-                    createdAt: z.coerce.date(),
-                    updatedAt: z.coerce.date(),
+                    createdAt: z.date(),
+                    updatedAt: z.date(),
+                    totalSessions: z.number(),
+                    clinicalRecord: z.object({
+                        cid: z.string(),
+                        allegation: z.string(),
+                        diagnosis: z.string(),
+                    }),
+                    sessions: z.array(
+                        z.object({
+                            id: z.string().uuid(),
+                            appointmentDate: z.date(),
+                            status: z.union([
+                                z.literal("SOLICITADO"),
+                                z.literal("CONFIRMADO"),
+                                z.literal("CANCELADO"),
+                                z.literal("FINALIZADO"),
+                            ]),
+                            duration: z.number(),
+                            sessionNumber: z.number(),
+                            progress: z.string().nullable(),
+                        })
+                    ),
                 })
             ),
         }),

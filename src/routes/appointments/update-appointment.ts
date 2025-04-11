@@ -1,114 +1,117 @@
 import type { FastifyInstance, FastifyRequest } from "fastify"
 import type { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
-import { isBefore, isSameDay, addMinutes } from "date-fns"
+import { isBefore, isSameDay } from "date-fns"
 import { prisma } from "../../../prisma/db"
 import { BadRequest, NotFound } from "../_errors/route-error"
 import {
     updateAppointmentSchema,
     statusUpdateAppointmentSchema,
 } from "../../schema/appointment"
-import type { Prisma } from "@prisma/client"
 
 /**
- * Verifica se há conflito de horário para o funcionário no mesmo dia e intervalo.
- * @throws {BadRequest} Se o funcionário já tiver um agendamento no intervalo, exceto o atual.
+ * Atualiza uma sessão específica de um agendamento existente e, se necessário, o funcionário no Appointment.
  */
-async function checkEmployeeAvailability(
-    employeeId: string,
-    appointmentDate: Date,
-    duration: number,
-    excludeAppointmentId?: string
-) {
-    const startDate = appointmentDate
-    const endDate = addMinutes(startDate, duration)
-
-    const conflictingAppointment = await prisma.appointment.findFirst({
-        where: {
-            employeeId,
-            appointmentDate: {
-                gte: startDate,
-                lt: endDate,
-            },
-            AND: {
-                appointmentDate: {
-                    gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)), // Início do dia
-                    lt: new Date(new Date(startDate).setHours(23, 59, 59, 999)), // Fim do dia
-                },
-                id: excludeAppointmentId
-                    ? { not: excludeAppointmentId }
-                    : undefined, // Exclui o agendamento atual
-            },
-        },
-    })
-
-    if (conflictingAppointment) {
-        throw new BadRequest(
-            `O funcionário já possui um agendamento em ${startDate.toISOString()}`
-        )
-    }
-}
-
-/**
- * Atualiza um agendamento existente com novos dados.
- */
-async function updateAppointmentLogic(
-    appointmentId: string,
+async function updateSessionLogic(
+    sessionId: string,
     updates: Partial<{
         appointmentDate: Date
         duration: number
         employeeId: string
         status: string
+        progress: string | null
     }>
 ) {
-    // Busca o agendamento atual
-    const appointment = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
-        include: { employee: true },
+    // Busca a sessão atual com o agendamento relacionado
+    const session = await prisma.session.findUnique({
+        where: { id: sessionId },
+        include: { appointment: true },
     })
 
-    if (!appointment) {
-        throw new NotFound("Agendamento não encontrado")
+    if (!session) {
+        throw new NotFound("Sessão não encontrada")
     }
 
-    // Prepara os dados atualizados
+    // Prepara os dados atualizados para a sessão
     const updatedData = {
-        appointmentDate: updates.appointmentDate ?? appointment.appointmentDate,
-        duration: updates.duration ?? appointment.duration,
-        employeeId: updates.employeeId ?? appointment.employeeId,
+        appointmentDate: updates.appointmentDate ?? session.appointmentDate,
+        duration: updates.duration ?? session.duration,
         status: updates.status as
             | "SOLICITADO"
             | "CONFIRMADO"
             | "CANCELADO"
             | "FINALIZADO"
             | undefined,
+        progress:
+            updates.progress !== undefined
+                ? updates.progress
+                : session.progress,
     }
 
-    // Validações
-    const now = new Date()
+    // Validações de data apenas se status não for "FINALIZADO"
+    const now = new Date(new Date().getTime() - 3 * 60 * 60 * 1000) // Ajustar para UTC-3
     if (
+        updatedData.status !== "FINALIZADO" && // Ignora validação se status for FINALIZADO
         isBefore(updatedData.appointmentDate, now) &&
         !isSameDay(updatedData.appointmentDate, now)
     ) {
-        throw new BadRequest("A data do agendamento deve ser hoje ou no futuro")
+        throw new BadRequest("A data da sessão deve ser hoje ou no futuro")
     }
 
-    await checkEmployeeAvailability(
-        updatedData.employeeId,
-        updatedData.appointmentDate,
-        updatedData.duration,
-        appointmentId // Exclui o agendamento atual da verificação de conflitos
-    )
+    // Usa a data original se status for "FINALIZADO", "CONFIRMADO" ou "CANCELADO" e appointmentDate não foi enviado
+    const appointmentDateToSave =
+        updatedData.status === "FINALIZADO" ||
+        updatedData.status === "CONFIRMADO" ||
+        (updatedData.status === "CANCELADO" && !updates.appointmentDate)
+            ? session.appointmentDate // Mantém a data original
+            : new Date(
+                  updatedData.appointmentDate.getTime() + 3 * 60 * 60 * 1000
+              ) // Converte para UTC
 
-    // Atualiza o agendamento
-    await prisma.appointment.update({
-        where: { id: appointmentId },
-        data: updatedData,
+    // Atualiza o Appointment se employeeId for fornecido e diferente do atual
+    if (
+        updates.employeeId &&
+        updates.employeeId !== session.appointment.employeeId
+    ) {
+        await prisma.appointment.update({
+            where: { id: session.appointmentId },
+            data: { employeeId: updates.employeeId },
+        })
+    }
+
+    // Atualiza a sessão
+    const updatedSession = await prisma.session.update({
+        where: { id: sessionId },
+        data: {
+            appointmentDate: appointmentDateToSave,
+            duration: updatedData.duration,
+            status: updatedData.status,
+            progress: updatedData.progress,
+            appointment: {
+                update: {
+                    updatedAt: new Date(
+                        new Date().getTime() - 3 * 60 * 60 * 1000
+                    ),
+                },
+            },
+        },
     })
+
+    // Converte a data de volta para UTC-3 ao retornar
+    const sessionInUtcMinus3 = {
+        ...updatedSession,
+        appointmentDate: new Date(
+            updatedSession.appointmentDate.getTime() - 3 * 60 * 60 * 1000
+        )
+            .toISOString()
+            .replace("Z", "-03:00"),
+    }
+
+    return sessionInUtcMinus3
 }
 
 /**
- * Registra a rota para atualizar um agendamento.
+ * Registra a rota para atualizar uma sessão de um agendamento.
  */
 export async function updateAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().put(
@@ -117,10 +120,10 @@ export async function updateAppointment(app: FastifyInstance) {
             schema: {
                 tags: ["Appointments"],
                 summary:
-                    "Update an existing appointment (reschedule or change status)",
+                    "Update an existing session (reschedule, change status, employee, or update progress)",
                 security: [{ bearerAuth: [] }],
                 params: z.object({
-                    id: z.string().uuid("ID do agendamento deve ser um UUID"),
+                    id: z.string().uuid("ID da sessão deve ser um UUID"),
                 }),
                 body: updateAppointmentSchema,
                 response: statusUpdateAppointmentSchema,
@@ -134,23 +137,27 @@ export async function updateAppointment(app: FastifyInstance) {
             reply
         ) => {
             const { id } = request.params
-            const { appointmentDate, duration, employee, status } = request.body
+            const { appointmentDate, duration, employeeId, status, progress } =
+                request.body
 
             const updates: Partial<{
                 appointmentDate: Date
                 duration: number
                 employeeId: string
                 status: string
+                progress: string | null
             }> = {}
 
-            if (appointmentDate) updates.appointmentDate = appointmentDate
+            if (appointmentDate)
+                updates.appointmentDate = new Date(appointmentDate)
             if (duration) updates.duration = duration
-            if (employee) updates.employeeId = employee.employeeId
+            if (employeeId) updates.employeeId = employeeId
             if (status) updates.status = status
+            if (progress !== undefined) updates.progress = progress
 
-            await updateAppointmentLogic(id, updates)
+            await updateSessionLogic(id, updates)
 
-            return reply.status(204).send()
+            return reply.status(202).send()
         }
     )
 }

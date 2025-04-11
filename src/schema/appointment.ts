@@ -4,24 +4,28 @@ import { z } from "zod"
  * Schema para criar um novo agendamento.
  */
 export const createAppointmentSchema = z.object({
-    appointmentDate: z.coerce.date(),
-    status: z.union([z.literal("SOLICITADO"), z.literal("CONFIRMADO")]),
-    patient: z.object({
-        id: z.string().uuid("ID do paciente deve ser um UUID"),
-        name: z.string(),
-        cpf: z.string(),
-    }),
-    employee: z.object({
-        name: z.string(),
-        id: z.string().uuid("ID do funcionário deve ser um UUID"),
-    }),
-    reason: z.object({
-        cid: z.string(),
-    }),
+    appointmentDate: z.string().datetime({ offset: true }),
     duration: z
         .number()
         .min(30, "A duração mínima é 30 minutos")
         .multipleOf(30, "A duração deve ser em intervalos de 30 minutos"),
+    totalSessions: z
+        .number()
+        .min(1, "Deve haver pelo menos 1 sessão")
+        .int("A quantidade de sessões deve ser um número inteiro"),
+    daysOfWeek: z
+        .array(
+            z
+                .number()
+                .min(0)
+                .max(
+                    6,
+                    "Os dias da semana devem ser de 0 a 6 (domingo a sábado)"
+                )
+        )
+        .optional(),
+    patientId: z.string().uuid("ID do paciente deve ser um UUID"),
+    employeeId: z.string().uuid("ID do funcionário deve ser um UUID"),
     clinicalRecordId: z
         .string()
         .uuid("ID do registro clínico deve ser um UUID"),
@@ -43,7 +47,7 @@ export const statusCreateAppointmentSchema = {
  * Schema para a repetição de agendamento.
  */
 export const repeatAppointmentSchema = z.object({
-    sessionCount: z
+    totalSessions: z
         .number()
         .min(1, "Deve haver pelo menos 1 sessão")
         .int("A quantidade de sessões deve ser um número inteiro"),
@@ -65,7 +69,10 @@ export const repeatAppointmentSchema = z.object({
  */
 export const statusRepeatAppointmentSchema = {
     201: z.object({
-        appointmentIds: z.array(
+        appointmentId: z
+            .string()
+            .uuid("ID do novo agendamento deve ser um UUID"),
+        sessionIds: z.array(
             z.string().uuid("ID do agendamento deve ser um UUID")
         ),
     }),
@@ -78,53 +85,46 @@ export const statusRepeatAppointmentSchema = {
 }
 
 /**
- * Schema para query params (filtros de data).
- */
-export const getAppointmentsQuerySchema = z
-    .object({
-        filter: z.enum(["today", "tomorrow", "week", "month"]).optional(),
-        startDate: z.string().datetime({ offset: true }).optional(),
-        endDate: z.string().datetime({ offset: true }).optional(),
-    })
-    .refine(
-        data => {
-            if (data.startDate && data.endDate) {
-                return new Date(data.startDate) <= new Date(data.endDate)
-            }
-            return true
-        },
-        { message: "startDate deve ser anterior ou igual a endDate" }
-    )
-
-/**
  * Schema de resposta para lista de agendamentos.
  */
 export const statusGetAppointmentsSchema = {
     200: z.object({
         appointments: z.array(
             z.object({
-                status: z.union([
-                    z.literal("SOLICITADO"),
-                    z.literal("CONFIRMADO"),
-                    z.literal("CANCELADO"),
-                    z.literal("FINALIZADO"),
-                ]),
                 id: z.string().uuid("ID do agendamento deve ser um UUID"),
-                appointmentDate: z.coerce.date(),
-                duration: z.number(),
-                employee: z.object({
-                    name: z.string(),
-                }),
+                totalSessions: z.number(),
+                createdAt: z.date(),
+                updatedAt: z.date(),
                 patient: z.object({
                     id: z.string().uuid("ID do paciente deve ser um UUID"),
                     name: z.string(),
                     phone: z.string().nullable(),
                 }),
+                employee: z.object({
+                    name: z.string(),
+                    id: z.string().uuid(),
+                }),
                 appointmentReason: z.object({
+                    id: z.string().uuid(),
                     cid: z.string(),
                     allegation: z.string(),
                     diagnosis: z.string(),
                 }),
+                sessions: z.array(
+                    z.object({
+                        id: z.string().uuid("ID da sessão deve ser um UUID"),
+                        sessionNumber: z.number(),
+                        status: z.union([
+                            z.literal("SOLICITADO"),
+                            z.literal("CONFIRMADO"),
+                            z.literal("CANCELADO"),
+                            z.literal("FINALIZADO"),
+                        ]),
+                        appointmentDate: z.string(),
+                        duration: z.number(),
+                        progress: z.string().nullable(),
+                    })
+                ),
             })
         ),
     }),
@@ -138,9 +138,9 @@ export const statusGetAppointmentsSchema = {
  */
 export const statusGetSinglePatientAppointments = {
     200: z.object({
-        appointment: z.object({
+        session: z.object({
             id: z.string().uuid("ID do agendamento deve ser um UUID"),
-            appointmentDate: z.coerce.date(),
+            appointmentDate: z.string(),
             duration: z.number(),
             status: z.union([
                 z.literal("SOLICITADO"),
@@ -148,22 +148,33 @@ export const statusGetSinglePatientAppointments = {
                 z.literal("CANCELADO"),
                 z.literal("FINALIZADO"),
             ]),
-            employee: z.object({
-                employeeName: z.string(),
-                employeeId: z
-                    .string()
-                    .uuid("ID do funcionário deve ser um UUID"),
-            }),
-            appointmentReason: z.object({
-                cid: z.string(),
-                allegation: z.string(),
-                diagnosis: z.string(),
-            }),
-            patient: z.object({
-                name: z.string(),
-                phone: z.string().nullable(),
-                email: z.string().email().nullable(),
-                patientId: z.string().uuid("ID do paciente deve ser um UUID"),
+            sessionNumber: z.number(),
+            progress: z.string().nullable(),
+            appointment: z.object({
+                id: z.string().uuid("ID do agendamento deve ser um UUID"),
+                totalSessions: z.number(),
+                createdAt: z.date(),
+                updatedAt: z.date(),
+                patient: z.object({
+                    patientId: z
+                        .string()
+                        .uuid("ID do paciente deve ser um UUID"),
+                    name: z.string(),
+                    phone: z.string().nullable(),
+                    email: z.string().email().nullable(),
+                }),
+                employee: z.object({
+                    employeeId: z
+                        .string()
+                        .uuid("ID do funcionário deve ser um UUID"),
+                    employeeName: z.string(),
+                }),
+                appointmentReason: z.object({
+                    id: z.string().uuid(),
+                    cid: z.string(),
+                    allegation: z.string(),
+                    diagnosis: z.string(),
+                }),
             }),
         }),
     }),
@@ -179,7 +190,7 @@ export const statusGetSinglePatientAppointments = {
  * Schema para atualizar um agendamento.
  */
 export const updateAppointmentSchema = z.object({
-    appointmentDate: z.coerce.date().optional(),
+    appointmentDate: z.string().datetime({ offset: true }).optional(),
     duration: z
         .number()
         .min(30, "A duração mínima é 30 minutos")
@@ -193,11 +204,10 @@ export const updateAppointmentSchema = z.object({
             z.literal("FINALIZADO"),
         ])
         .optional(),
-    employee: z
-        .object({
-            employeeName: z.string(),
-            employeeId: z.string().uuid("ID do funcionário deve ser um UUID"),
-        })
+    progress: z.string().nullable().optional(),
+    employeeId: z
+        .string()
+        .uuid("ID do funcionário deve ser um UUID")
         .optional(),
 })
 
@@ -205,7 +215,7 @@ export const updateAppointmentSchema = z.object({
  * Schema de resposta para atualização de agendamento.
  */
 export const statusUpdateAppointmentSchema = {
-    204: z.null(),
+    202: z.null(),
     404: z.object({
         message: z.string(),
     }),

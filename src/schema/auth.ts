@@ -32,19 +32,37 @@ export const verifyAuthSchema = {
             appointments: z.array(
                 z.object({
                     id: z.string().uuid(),
+                    totalSessions: z.number(),
                     patient: z.object({
                         name: z.string(),
                         id: z.string().uuid(),
                     }),
-                    status: z.union([
-                        z.literal("SOLICITADO"),
-                        z.literal("CONFIRMADO"),
-                        z.literal("CANCELADO"),
-                        z.literal("FINALIZADO"),
-                    ]),
+                    clinicalRecord: z.object({
+                        cid: z.string(),
+                    }),
+                    sessions: z.array(
+                        z.object({
+                            id: z.string().uuid(),
+                            sessionNumber: z.number(),
+                            appointmentDate: z.date(),
+                            status: z.union([
+                                z.literal("SOLICITADO"),
+                                z.literal("CONFIRMADO"),
+                                z.literal("CANCELADO"),
+                                z.literal("FINALIZADO"),
+                            ]),
+                            duration: z.number(),
+                        })
+                    ),
                 })
             ),
         }),
+        employees: z.array(
+            z.object({
+                name: z.string(),
+                id: z.string().uuid(),
+            })
+        ),
     }),
 }
 

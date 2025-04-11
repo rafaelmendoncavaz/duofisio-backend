@@ -6,70 +6,97 @@ import { NotFound } from "../_errors/route-error"
 import { statusGetSinglePatientAppointments } from "../../schema/appointment"
 
 /**
- * Busca os detalhes de um agendamento específico.
- * @throws {NotFound} Se o agendamento não for encontrado.
+ * Busca os detalhes de uma sessão específica.
+ * @throws {NotFound} Se a sessão não for encontrada.
  */
-async function getAppointmentById(appointmentId: string) {
-    const appointment = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
+async function getSessionById(sessionId: string) {
+    const session = await prisma.session.findUnique({
+        where: { id: sessionId },
         select: {
             id: true,
             appointmentDate: true,
             duration: true,
             status: true,
-            patient: {
+            sessionNumber: true,
+            progress: true,
+            appointment: {
                 select: {
                     id: true,
-                    name: true,
-                    phone: true,
-                    email: true,
-                },
-            },
-            employee: {
-                select: {
-                    id: true,
-                    name: true,
-                },
-            },
-            clinicalRecord: {
-                select: {
-                    cid: true,
-                    allegation: true,
-                    diagnosis: true,
+                    totalSessions: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    patient: {
+                        select: {
+                            id: true,
+                            name: true,
+                            phone: true,
+                            email: true,
+                        },
+                    },
+                    employee: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    clinicalRecord: {
+                        select: {
+                            id: true,
+                            cid: true,
+                            allegation: true,
+                            diagnosis: true,
+                        },
+                    },
                 },
             },
         },
     })
 
-    if (!appointment) {
-        throw new NotFound("Agendamento não encontrado")
+    if (!session) {
+        throw new NotFound("Sessão não encontrada")
     }
 
+    // Converte a data de UTC para UTC-3
+    const appointmentDateInUtcMinus3 = new Date(
+        session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
+    )
+        .toISOString()
+        .replace("Z", "-03:00")
+
     return {
-        id: appointment.id,
-        appointmentDate: appointment.appointmentDate,
-        duration: appointment.duration,
-        status: appointment.status,
-        patient: {
-            patientId: appointment.patient.id,
-            name: appointment.patient.name,
-            phone: appointment.patient.phone,
-            email: appointment.patient.email,
-        },
-        employee: {
-            employeeId: appointment.employee.id,
-            employeeName: appointment.employee.name,
-        },
-        appointmentReason: {
-            cid: appointment.clinicalRecord.cid,
-            allegation: appointment.clinicalRecord.allegation,
-            diagnosis: appointment.clinicalRecord.diagnosis,
+        id: session.id,
+        appointmentDate: appointmentDateInUtcMinus3,
+        duration: session.duration,
+        status: session.status,
+        sessionNumber: session.sessionNumber,
+        progress: session.progress,
+        appointment: {
+            id: session.appointment.id,
+            totalSessions: session.appointment.totalSessions,
+            createdAt: session.appointment.createdAt,
+            updatedAt: session.appointment.updatedAt,
+            patient: {
+                patientId: session.appointment.patient.id,
+                name: session.appointment.patient.name,
+                phone: session.appointment.patient.phone,
+                email: session.appointment.patient.email,
+            },
+            employee: {
+                employeeId: session.appointment.employee.id,
+                employeeName: session.appointment.employee.name,
+            },
+            appointmentReason: {
+                id: session.appointment.clinicalRecord.id,
+                cid: session.appointment.clinicalRecord.cid,
+                allegation: session.appointment.clinicalRecord.allegation,
+                diagnosis: session.appointment.clinicalRecord.diagnosis,
+            },
         },
     }
 }
 
 /**
- * Registra a rota para obter os detalhes de um agendamento específico.
+ * Registra a rota para obter os detalhes de uma sessão específica.
  */
 export async function getAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
@@ -77,10 +104,10 @@ export async function getAppointment(app: FastifyInstance) {
         {
             schema: {
                 tags: ["Appointments"],
-                summary: "Get details of a specific appointment",
+                summary: "Get details of a specific session",
                 security: [{ bearerAuth: [] }],
                 params: z.object({
-                    id: z.string().uuid("ID do agendamento deve ser um UUID"),
+                    id: z.string().uuid("ID da sessão deve ser um UUID"),
                 }),
                 response: statusGetSinglePatientAppointments,
             },
@@ -88,9 +115,9 @@ export async function getAppointment(app: FastifyInstance) {
         async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
             const { id } = request.params
 
-            const appointment = await getAppointmentById(id)
+            const session = await getSessionById(id)
 
-            return reply.status(200).send({ appointment })
+            return reply.status(200).send({ session })
         }
     )
 }

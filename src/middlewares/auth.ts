@@ -7,7 +7,7 @@ export async function auth(request: FastifyRequest, reply: FastifyReply) {
         // O Payload decodificado estará disponível em request.user
     } catch (error) {
         reply.status(401).send({
-            message: "Não autorizado",
+            message: "Token Não autorizado",
         })
     }
 }

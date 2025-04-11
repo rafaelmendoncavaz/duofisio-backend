@@ -1,9 +1,10 @@
 import { hash } from "bcrypt"
 import { prisma } from "../prisma/db"
-import { startOfDay, addDays, set } from "date-fns"
+import { startOfDay, addDays, set, getDay } from "date-fns"
 
 async function seed() {
     // Limpa todas as tabelas para evitar duplicatas
+    await prisma.session.deleteMany() // Adicionado para limpar sessões
     await prisma.appointment.deleteMany()
     await prisma.clinicalData.deleteMany()
     await prisma.adultResponsible.deleteMany()
@@ -108,7 +109,7 @@ async function seed() {
             email: "ana@exemplo.com",
             sex: "Feminino",
             addressId: address2.id,
-            adultResponsibleId: adultResponsible.id, // Agora criado após o responsável
+            adultResponsibleId: adultResponsible.id,
         },
     })
 
@@ -160,56 +161,117 @@ async function seed() {
         },
     })
 
-    // Agendamentos
-    const baseDate = startOfDay(new Date())
-    await prisma.appointment.createMany({
-        data: [
-            {
-                id: "550e8400-e29b-41d4-a716-446655440050",
-                appointmentDate: set(baseDate, { hours: 9, minutes: 0 }),
-                duration: 60,
-                status: "FINALIZADO",
-                patientId: patient1.id,
-                employeeId: employee1.id,
-                clinicalRecordId: clinicalData1.id,
-            },
-            {
-                id: "550e8400-e29b-41d4-a716-446655440051",
-                appointmentDate: set(addDays(baseDate, 1), {
-                    hours: 10,
-                    minutes: 30,
-                }),
-                duration: 30,
-                status: "SOLICITADO",
-                patientId: patient2.id,
-                employeeId: employee2.id,
-                clinicalRecordId: clinicalData2.id,
-            },
-            {
-                id: "550e8400-e29b-41d4-a716-446655440052",
-                appointmentDate: set(addDays(baseDate, 2), {
-                    hours: 14,
-                    minutes: 0,
-                }),
-                duration: 90,
-                status: "CONFIRMADO",
-                patientId: patient3.id,
-                employeeId: employee1.id,
-                clinicalRecordId: clinicalData3.id,
-            },
-            {
-                id: "550e8400-e29b-41d4-a716-446655440053",
-                appointmentDate: set(addDays(baseDate, 2), {
-                    hours: 14,
-                    minutes: 0,
-                }),
-                duration: 60,
-                status: "SOLICITADO",
-                patientId: patient1.id,
-                employeeId: employee2.id,
-                clinicalRecordId: clinicalData1.id,
-            },
-        ],
+    // Função auxiliar para gerar datas de sessões com base em daysOfWeek
+    function generateSessionDates(
+        startDate: Date,
+        totalSessions: number,
+        daysOfWeek: number[]
+    ): Date[] {
+        const sessionDates: Date[] = []
+        let currentDate = startDate
+        let sessionsGenerated = 0
+
+        while (sessionsGenerated < totalSessions) {
+            const dayOfWeek = getDay(currentDate)
+            if (daysOfWeek.includes(dayOfWeek)) {
+                sessionDates.push(new Date(currentDate))
+                sessionsGenerated++
+            }
+            currentDate = addDays(currentDate, 1)
+        }
+
+        return sessionDates
+    }
+
+    // Agendamentos com Sessões
+    const baseDate = startOfDay(new Date()) // Hoje em UTC-3
+    const baseDateUtcMinus3 = new Date(baseDate.getTime() - 3 * 60 * 60 * 1000)
+
+    // Agendamento 1: João Silva (3 sessões às segundas e quintas)
+    const appointment1 = await prisma.appointment.create({
+        data: {
+            id: "550e8400-e29b-41d4-a716-446655440050",
+            totalSessions: 3,
+            patientId: patient1.id,
+            employeeId: employee1.id,
+            clinicalRecordId: clinicalData1.id,
+        },
+    })
+
+    const sessionDates1 = generateSessionDates(
+        set(baseDateUtcMinus3, { hours: 9, minutes: 0 }),
+        3,
+        [1, 4] // Segunda e Quinta
+    )
+
+    await prisma.session.createMany({
+        data: sessionDates1.map((date, index) => ({
+            id: `550e8400-e29b-41d4-a716-44665544005${index + 1}`,
+            appointmentId: appointment1.id,
+            appointmentDate: new Date(date.getTime() + 3 * 60 * 60 * 1000), // Converte para UTC
+            duration: 60,
+            sessionNumber: index + 1,
+            status: index === 0 ? "FINALIZADO" : "SOLICITADO",
+            progress: index === 0 ? "Paciente relatou melhora na dor" : null,
+        })),
+    })
+
+    // Agendamento 2: Ana Costa (2 sessões às terças)
+    const appointment2 = await prisma.appointment.create({
+        data: {
+            id: "550e8400-e29b-41d4-a716-446655440051",
+            totalSessions: 2,
+            patientId: patient2.id,
+            employeeId: employee2.id,
+            clinicalRecordId: clinicalData2.id,
+        },
+    })
+
+    const sessionDates2 = generateSessionDates(
+        set(addDays(baseDateUtcMinus3, 1), { hours: 10, minutes: 30 }),
+        2,
+        [2] // Terça
+    )
+
+    await prisma.session.createMany({
+        data: sessionDates2.map((date, index) => ({
+            id: `550e8400-e29b-41d4-a716-44665544006${index + 1}`,
+            appointmentId: appointment2.id,
+            appointmentDate: new Date(date.getTime() + 3 * 60 * 60 * 1000), // Converte para UTC
+            duration: 30,
+            sessionNumber: index + 1,
+            status: "SOLICITADO",
+            progress: null,
+        })),
+    })
+
+    // Agendamento 3: Pedro Almeida (4 sessões às quartas e sextas)
+    const appointment3 = await prisma.appointment.create({
+        data: {
+            id: "550e8400-e29b-41d4-a716-446655440052",
+            totalSessions: 4,
+            patientId: patient3.id,
+            employeeId: employee1.id,
+            clinicalRecordId: clinicalData3.id,
+        },
+    })
+
+    const sessionDates3 = generateSessionDates(
+        set(addDays(baseDateUtcMinus3, 2), { hours: 14, minutes: 0 }),
+        4,
+        [3, 5] // Quarta e Sexta
+    )
+
+    await prisma.session.createMany({
+        data: sessionDates3.map((date, index) => ({
+            id: `550e8400-e29b-41d4-a716-44665544007${index + 1}`,
+            appointmentId: appointment3.id,
+            appointmentDate: new Date(date.getTime() + 3 * 60 * 60 * 1000), // Converte para UTC
+            duration: 90,
+            sessionNumber: index + 1,
+            status: index === 0 ? "CONFIRMADO" : "SOLICITADO",
+            progress: null,
+        })),
     })
 
     console.log("Seed concluído com sucesso!")
