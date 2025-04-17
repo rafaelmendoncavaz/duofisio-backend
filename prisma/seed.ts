@@ -13,15 +13,19 @@ async function seed() {
     await prisma.employees.deleteMany()
 
     // Cria senha padrão para o funcionário
-    const password = await hash("123456", 6)
+    const rafaPassword = await hash(process.env.RAFAEL_PASSWORD as string, 6)
+    const mariaPassword = await hash(process.env.MARIA_PASSWORD as string, 6)
+    const dennisPassword = await hash(process.env.DENNIS_PASSWORD as string, 6)
+    const lucasPassword = await hash(process.env.LUCAS_PASSWORD as string, 6)
+    const joaoPassword = await hash(process.env.JOAO_PASSWORD as string, 6)
 
     // Criação de Funcionários
     const employee1 = await prisma.employees.create({
         data: {
             id: "550e8400-e29b-41d4-a716-446655440000",
             name: "Rafael",
-            email: "rafael@acme.com",
-            password,
+            email: process.env.RAFAEL_EMAIL as string,
+            password: rafaPassword,
         },
     })
 
@@ -29,9 +33,32 @@ async function seed() {
         data: {
             id: "550e8400-e29b-41d4-a716-446655440001",
             name: "Dr. Maria",
-            email: "maria@acme.com",
-            password,
+            email: process.env.MARIA_EMAIL as string,
+            password: mariaPassword,
         },
+    })
+
+    await prisma.employees.createMany({
+        data: [
+            {
+                id: crypto.randomUUID(),
+                name: "Dennis",
+                email: process.env.DENNIS_EMAIL as string,
+                password: dennisPassword,
+            },
+            {
+                id: crypto.randomUUID(),
+                name: "Lucas",
+                email: process.env.LUCAS_EMAIL as string,
+                password: lucasPassword,
+            },
+            {
+                id: crypto.randomUUID(),
+                name: "João",
+                email: process.env.JOAO_EMAIL as string,
+                password: joaoPassword,
+            },
+        ],
     })
 
     // Endereços para pacientes e responsáveis

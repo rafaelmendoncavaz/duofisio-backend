@@ -12,8 +12,23 @@ export const authLoginSchema = z.object({
  * Schemas de resposta para a rota de login.
  */
 export const statusAuthLoginSchema = {
+    200: z.object({
+        message: z.string(),
+    }),
+    500: z.object({
+        message: z.string(),
+    }),
+}
+
+export const statusLogoutSchema = {
+    200: z.object({
+        message: z.string(),
+    }),
+}
+
+export const statusCSRFTokenSchema = {
     201: z.object({
-        token: z.string(),
+        csrfToken: z.string(),
     }),
     500: z.object({
         message: z.string(),

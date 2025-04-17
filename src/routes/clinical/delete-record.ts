@@ -66,10 +66,11 @@ export async function deleteClinicalRecord(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().delete(
         "/patients/:id/clinical/:recordId",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Clinical"],
                 summary: "Delete a patient's clinical data",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: getPatientDataSchema, // Nota: deve ser ajustado para incluir recordId
             },
         },

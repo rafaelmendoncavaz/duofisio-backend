@@ -57,10 +57,11 @@ export async function deletePatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().delete(
         "/patients/:id",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Patients"],
                 summary: "Delete patient data",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: getPatientDataSchema,
             },
         },

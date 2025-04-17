@@ -1,5 +1,4 @@
 import type { FastifyPluginAsync } from "fastify"
-import { auth } from "../middlewares/auth"
 import { prisma } from "../../prisma/db"
 import { verifyAuthSchema } from "../schema/auth"
 import { Unauthorized } from "./_errors/route-error"
@@ -59,7 +58,7 @@ export const verifyAuth: FastifyPluginAsync = async app => {
     app.get(
         "/verify",
         {
-            preHandler: [auth],
+            preHandler: [app.authenticate],
             schema: {
                 tags: ["Auth Login"],
                 summary: "Authenticated login",

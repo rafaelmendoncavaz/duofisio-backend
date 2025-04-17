@@ -145,10 +145,11 @@ export async function repeatAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
         "/appointments/:id/repeat",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Appointments"],
                 summary: "Repeat an existing appointment with new sessions",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: z.object({
                     id: z.string().uuid("ID do agendamento deve ser um UUID"),
                 }),

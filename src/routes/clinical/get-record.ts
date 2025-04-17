@@ -53,10 +53,11 @@ export async function getSingleClinicalRecord(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
         "/patients/:id/clinical/:recordId",
         {
+            preHandler: [app.authenticate],
             schema: {
                 tags: ["Clinical"],
                 summary: "Get patient's single record data",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: getPatientDataSchema, // Nota: deve ser ajustado para incluir recordId
                 response: statusGetSingleClinicalRecordSchema,
             },

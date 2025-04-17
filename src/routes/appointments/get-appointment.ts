@@ -102,10 +102,11 @@ export async function getAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
         "/appointments/:id",
         {
+            preHandler: [app.authenticate],
             schema: {
                 tags: ["Appointments"],
                 summary: "Get details of a specific session",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: z.object({
                     id: z.string().uuid("ID da sessão deve ser um UUID"),
                 }),

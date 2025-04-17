@@ -94,10 +94,11 @@ export async function addPatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
         "/patients",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Patients"],
                 summary: "Create a new patient",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 body: createPatientSchema,
                 response: statusCreatePatientSchema,
             },

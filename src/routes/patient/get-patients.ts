@@ -55,7 +55,7 @@ export async function getPatients(app: FastifyInstance) {
             schema: {
                 tags: ["Patients"],
                 summary: "Get a list of all patients",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 response: statusGetPatientsSchema,
             },
         },

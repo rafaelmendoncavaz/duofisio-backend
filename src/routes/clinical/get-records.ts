@@ -76,7 +76,7 @@ export async function getClinicalRecords(app: FastifyInstance) {
             schema: {
                 tags: ["Clinical"],
                 summary: "Get all of the patient clinical records",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: getPatientDataSchema,
                 response: statusGetClinicalRecordListSchema,
             },

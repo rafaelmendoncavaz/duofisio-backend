@@ -30,10 +30,11 @@ export async function deleteAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().delete(
         "/appointments/:id",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Appointments"],
                 summary: "Delete a specific appointment",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: z.object({
                     id: z.string().uuid("ID do agendamento deve ser um UUID"),
                 }),

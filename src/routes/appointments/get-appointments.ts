@@ -95,7 +95,7 @@ export async function getAppointments(app: FastifyInstance) {
             schema: {
                 tags: ["Appointments"],
                 summary: "Get a list of appointments with their sessions",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 response: statusGetAppointmentsSchema,
             },
         },

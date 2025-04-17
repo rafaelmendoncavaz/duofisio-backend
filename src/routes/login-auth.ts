@@ -9,6 +9,19 @@ export async function loginAuth(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
         "/login",
         {
+            preHandler: [
+                async (request, reply) => {
+                    console.log(
+                        "PreHandler - Header X-CSRF-Token:",
+                        request.headers["x-csrf-token"]
+                    )
+                    console.log(
+                        "PreHandler - Cookie csrfToken:",
+                        request.cookies.csrfToken
+                    )
+                },
+                app.csrfProtection,
+            ],
             schema: {
                 tags: ["Auth Login"],
                 summary: "Authenticated login",
@@ -16,13 +29,19 @@ export async function loginAuth(app: FastifyInstance) {
                 response: statusAuthLoginSchema,
             },
         },
-        async (request, response) => {
-            const { email, password } = authLoginSchema.parse(request.body)
+        async (request, reply) => {
+            console.log("Handler - Chegou aqui!")
+            const { email, password } = request.body
 
             try {
                 const user = await prisma.employees.findUnique({
                     where: {
                         email,
+                    },
+                    select: {
+                        id: true,
+                        email: true,
+                        password: true,
                     },
                 })
 
@@ -36,35 +55,46 @@ export async function loginAuth(app: FastifyInstance) {
                     throw new Unauthorized("Senha incorreta")
                 }
 
-                // Gera o token JWT
-                const token = await response.jwtSign(
+                // Gerar token JWT
+                const token = app.jwt.sign(
                     {
                         id: user.id,
                         email: user.email,
                     },
                     {
-                        expiresIn: "24h",
+                        expiresIn: "7d",
                     }
                 )
 
-                return response.status(200).send({
-                    token,
-                })
+                // Definir cookie HttpOnly
+                return reply
+                    .setCookie("dfauth", token, {
+                        path: "/",
+                        httpOnly: true,
+                        sameSite: "strict",
+                        secure: false,
+                        maxAge: 7 * 24 * 60 * 60,
+                        signed: true,
+                    })
+                    .status(200)
+                    .send({
+                        message: "Login efetuado com sucesso!",
+                    })
             } catch (error) {
                 if (error instanceof NotFound) {
-                    return response.status(404).send({
+                    return reply.status(404).send({
                         message: error.message,
                     })
                 }
 
                 if (error instanceof Unauthorized) {
-                    return response.status(401).send({
+                    return reply.status(401).send({
                         message: error.message,
                     })
                 }
 
                 console.error(error)
-                return response.status(500).send({
+                return reply.status(500).send({
                     message: "Erro no servidor",
                 })
             }

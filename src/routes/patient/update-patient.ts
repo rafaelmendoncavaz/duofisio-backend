@@ -102,10 +102,11 @@ export async function updatePatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().put(
         "/patients/:id",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Patients"],
                 summary: "Update patient data",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 body: updatePatientSchema,
                 params: getPatientDataSchema,
             },

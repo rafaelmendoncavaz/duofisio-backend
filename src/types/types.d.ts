@@ -23,6 +23,21 @@ declare module "fastify" {
     interface FastifyRequest {
         user: JwtPayload
     }
+
+    // Interface do Decorador
+    interface FastifyInstance {
+        authenticate: (
+            request: FastifyRequest,
+            reply: FastifyReply
+        ) => Promise<void>
+    }
+}
+
+declare namespace fastifyCsrfProtection {
+    import type { FastifyRequest } from "fastify"
+    interface FastifyCsrfProtectionOptionsBase {
+        validateToken?: (token: string, request: FastifyRequest) => boolean
+    }
 }
 
 /**

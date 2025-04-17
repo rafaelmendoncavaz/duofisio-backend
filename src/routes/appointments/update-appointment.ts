@@ -117,11 +117,12 @@ export async function updateAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().put(
         "/appointments/:id",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Appointments"],
                 summary:
                     "Update an existing session (reschedule, change status, employee, or update progress)",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: z.object({
                     id: z.string().uuid("ID da sessão deve ser um UUID"),
                 }),

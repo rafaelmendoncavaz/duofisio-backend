@@ -122,10 +122,11 @@ export async function createAppointment(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
         "/appointments",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Appointments"],
                 summary: "Create a new appointment with sessions for a patient",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 body: createAppointmentSchema,
                 response: statusCreateAppointmentSchema,
             },

@@ -112,10 +112,11 @@ export async function getPatient(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
         "/patients/:id",
         {
+            preHandler: [app.authenticate],
             schema: {
                 tags: ["Patients"],
                 summary: "Get details of a specific patient",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: getPatientDataSchema,
                 response: statusPatientDataSchema,
             },

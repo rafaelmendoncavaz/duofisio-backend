@@ -75,10 +75,11 @@ export async function addClinicalRecord(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
         "/patients/:id/clinical",
         {
+            preHandler: [app.csrfProtection, app.authenticate],
             schema: {
                 tags: ["Clinical"],
                 summary: "Create a new patient clinical record",
-                security: [{ bearerAuth: [] }],
+                security: [{ cookieAuth: [] }],
                 params: getPatientDataSchema,
                 body: createNewClinicalRecordSchema,
                 response: statusClinicalRecordCreatedSchema,
