@@ -220,9 +220,10 @@ async function start() {
     registerPublicRoutes()
     registerProtectedRoutes()
 
-    const port = Number(process.env.PORT) || 3000
+    const port = Number.parseInt(process.env.PORT || "3000", 10)
+    const host = "0.0.0.0"
 
-    await app.listen({ port })
+    await app.listen({ port, host })
     app.log.info(`Server is running on port ${port}`)
 }
 
