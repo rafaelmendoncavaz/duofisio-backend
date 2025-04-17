@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,7 +8,111 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Enums
+model Employees {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  name         String
+  appointments Appointment[]
+
+  @@map("employee")
+}
+
+model Patients {
+  id                 String            @id @default(uuid())
+  name               String
+  cpf                String            @unique
+  dateOfBirth        DateTime
+  phone              String?
+  email              String?           @unique
+  sex                Sex?
+  profession         String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  addressId          String
+  adultResponsibleId String?
+  appointments       Appointment[]
+  clinicalData       ClinicalData[]
+  address            Address           @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  adultResponsible   AdultResponsible? @relation(fields: [adultResponsibleId], references: [id])
+
+  @@map("patient")
+}
+
+model ClinicalData {
+  id           String        @id @default(uuid())
+  cid          String
+  covenant     String?
+  expires      DateTime?
+  CNS          String?
+  allegation   String
+  diagnosis    String
+  patientId    String
+  appointments Appointment[]
+  patient      Patients      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("clinical_data")
+}
+
+model Address {
+  id               String            @id @default(uuid())
+  cep              String
+  street           String
+  number           Int
+  complement       String?
+  neighborhood     String
+  city             String
+  state            String
+  adultResponsible AdultResponsible?
+  patients         Patients[]
+
+  @@map("address")
+}
+
+model AdultResponsible {
+  id        String     @id @default(uuid())
+  name      String
+  cpf       String     @unique
+  phone     String
+  email     String     @unique
+  addressId String     @unique
+  address   Address    @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  patient   Patients[]
+
+  @@map("adult_responsible")
+}
+
+model Appointment {
+  id               String       @id @default(uuid())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  patientId        String
+  employeeId       String
+  clinicalRecordId String
+  totalSessions    Int
+  clinicalRecord   ClinicalData @relation(fields: [clinicalRecordId], references: [id])
+  employee         Employees    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  patient          Patients     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sessions         Session[]
+
+  @@map("appointments")
+}
+
+model Session {
+  id              String            @id @default(uuid())
+  status          AppointmentStatus
+  appointmentDate DateTime
+  duration        Int
+  sessionNumber   Int
+  progress        String?
+  appointmentId   String
+  appointment     Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
 enum Sex {
   Masculino
   Feminino
@@ -22,125 +123,4 @@ enum AppointmentStatus {
   CONFIRMADO
   CANCELADO
   FINALIZADO
-}
-
-// Modelos
-
-model Employees {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relações
-  appointments Appointment[]
-
-  @@map("employee")
-}
-
-model Patients {
-  id                String           @id @default(uuid())
-  name              String
-  cpf               String           @unique
-  dateOfBirth       DateTime
-  phone             String?
-  email             String?          @unique
-  sex               Sex?
-  profession        String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  // Relações
-  clinicalData      ClinicalData[]
-  address           Address          @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId         String
-  adultResponsible  AdultResponsible? @relation(fields: [adultResponsibleId], references: [id], onDelete: SetNull)
-  adultResponsibleId String?
-  appointments      Appointment[]
-
-  @@map("patient")
-}
-
-model ClinicalData {
-  id         String   @id @default(uuid())
-  cid        String
-  covenant   String?
-  expires    DateTime?
-  CNS        String?
-  allegation String
-  diagnosis  String
-
-  // Relações
-  patient    Patients      @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId  String
-  appointments Appointment[]  // Ajustado para relação 1:N
-
-  @@map("clinical_data")
-}
-
-model Address {
-  id          String   @id @default(uuid())
-  cep         String
-  street      String
-  number      Int
-  complement  String?
-  neighborhood String
-  city        String
-  state       String
-
-  // Relações
-  patients         Patients[]
-  adultResponsible AdultResponsible?
-
-  @@map("address")
-}
-
-model AdultResponsible {
-  id        String        @id @default(uuid())
-  name      String
-  cpf       String        @unique
-  phone     String
-  email     String        @unique
-
-  // Relações
-  address   Address       @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId String        @unique
-  patient   Patients[]
-
-  @@map("adult_responsible")
-}
-
-model Appointment {
-  id              	String           @id @default(uuid())            
-  totalSessions  	  Int               
-  createdAt       	DateTime         @default(now())
-  updatedAt       	DateTime         @updatedAt
-
-  // Relações
-  sessions	        Session[]
-  patient           Patients         @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  patientId         String
-  employee          Employees        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId        String
-  clinicalRecord    ClinicalData     @relation(fields: [clinicalRecordId], references: [id])
-  clinicalRecordId  String         
-
-  @@map("appointments")
-}
-
-model Session {
-  id			          String		          @id @default(uuid())
-  status          	AppointmentStatus
-  appointmentDate	  DateTime
-  duration		      Int
-  sessionNumber		  Int
-  progress		      String?
-
-  //Relações
-  appointment		    Appointment	        @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  appointmentId		  String
-
- @@map("sessions")
 }
