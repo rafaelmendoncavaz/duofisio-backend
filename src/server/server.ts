@@ -142,6 +142,8 @@ async function configurePlugins() {
     await app.register(cors, {
         origin: process.env.FRONTEND_URL || true,
         credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "X-CSRF-Token"],
     })
 
     await app.register(fastifySwagger, {
