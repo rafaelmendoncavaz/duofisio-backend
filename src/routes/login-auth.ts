@@ -72,7 +72,7 @@ export async function loginAuth(app: FastifyInstance) {
                         path: "/",
                         httpOnly: true,
                         sameSite: "strict",
-                        secure: false,
+                        secure: true,
                         maxAge: 7 * 24 * 60 * 60,
                         signed: true,
                     })

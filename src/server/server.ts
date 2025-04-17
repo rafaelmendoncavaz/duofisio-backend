@@ -97,8 +97,8 @@ async function configurePlugins() {
         cookieOpts: {
             path: "/",
             httpOnly: true,
-            secure: false,
-            sameSite: "strict",
+            secure: true,
+            sameSite: "none",
         },
         getToken: (request: FastifyRequest) =>
             request.headers["x-csrf-token"]?.toString() || "",
