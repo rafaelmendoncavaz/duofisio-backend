@@ -1,4 +1,4 @@
-import { hash } from "bcrypt"
+import { hash } from "bcryptjs"
 import { prisma } from "../prisma/db"
 import { startOfDay, addDays, set, getDay } from "date-fns"
 
