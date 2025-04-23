@@ -1,12 +1,12 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
 import {
     getPatientDataSchema,
     statusGetClinicalRecordListSchema,
-} from "../../schema/schema"
-import { prisma } from "../../../prisma/db"
-import { NotFound } from "../_errors/route-error"
+} from "../../schema/schema";
+import { prisma } from "../../../prisma/db";
+import { NotFound } from "../_errors/route-error";
 
 /**
  * Verifica se o paciente existe pelo ID.
@@ -15,15 +15,15 @@ import { NotFound } from "../_errors/route-error"
 export async function checkPatientExists(id: string): Promise<void> {
     const patient = await prisma.patients.findUnique({
         where: { id },
-    })
+    });
 
     if (!patient) {
-        throw new NotFound("Paciente não encontrado")
+        throw new NotFound("Paciente não encontrado");
     }
 }
 
 // Tipo dos parâmetros
-type PatientParams = z.infer<typeof getPatientDataSchema>
+type PatientParams = z.infer<typeof getPatientDataSchema>;
 
 // Campos selecionados para registros clínicos
 const CLINICAL_RECORD_SELECT = {
@@ -34,7 +34,7 @@ const CLINICAL_RECORD_SELECT = {
     expires: true,
     allegation: true,
     diagnosis: true,
-}
+};
 
 /**
  * Busca todos os registros clínicos de um paciente.
@@ -44,9 +44,9 @@ async function getPatientClinicalRecords(patientId: string) {
         where: { patientId },
         orderBy: { cid: "asc" },
         select: CLINICAL_RECORD_SELECT,
-    })
+    });
 
-    return clinicalRecordList
+    return clinicalRecordList;
 }
 
 /**
@@ -57,13 +57,13 @@ async function getPatientDetails(id: string) {
     const patient = await prisma.patients.findUnique({
         where: { id },
         select: { id: true, name: true },
-    })
+    });
 
     if (!patient) {
-        throw new NotFound("Paciente não encontrado")
+        throw new NotFound("Paciente não encontrado");
     }
 
-    return patient
+    return patient;
 }
 
 /**
@@ -82,10 +82,10 @@ export async function getClinicalRecords(app: FastifyInstance) {
             },
         },
         async (request: FastifyRequest<{ Params: PatientParams }>, reply) => {
-            const { id } = request.params
+            const { id } = request.params;
 
-            const patient = await getPatientDetails(id) // Usa findUnique e seleciona apenas o necessário
-            const clinicalRecordList = await getPatientClinicalRecords(id)
+            const patient = await getPatientDetails(id); // Usa findUnique e seleciona apenas o necessário
+            const clinicalRecordList = await getPatientClinicalRecords(id);
 
             return reply.status(200).send({
                 patientClinicalRecord: {
@@ -93,7 +93,7 @@ export async function getClinicalRecords(app: FastifyInstance) {
                     patientName: patient.name,
                     patientId: patient.id,
                 },
-            })
+            });
         }
-    )
+    );
 }

@@ -1,9 +1,9 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { z } from "zod"
-import { prisma } from "../../../prisma/db"
-import { NotFound } from "../_errors/route-error"
-import { statusDeleteAppointmentSchema } from "../../schema/appointment"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
+import { prisma } from "../../../prisma/db";
+import { NotFound } from "../_errors/route-error";
+import { statusDeleteAppointmentSchema } from "../../schema/appointment";
 
 /**
  * Exclui um agendamento específico.
@@ -12,15 +12,15 @@ import { statusDeleteAppointmentSchema } from "../../schema/appointment"
 async function deleteAppointmentLogic(appointmentId: string) {
     const appointment = await prisma.appointment.findUnique({
         where: { id: appointmentId },
-    })
+    });
 
     if (!appointment) {
-        throw new NotFound("Agendamento não encontrado")
+        throw new NotFound("Agendamento não encontrado");
     }
 
     await prisma.appointment.delete({
         where: { id: appointmentId },
-    })
+    });
 }
 
 /**
@@ -42,11 +42,11 @@ export async function deleteAppointment(app: FastifyInstance) {
             },
         },
         async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
-            const { id } = request.params
+            const { id } = request.params;
 
-            await deleteAppointmentLogic(id)
+            await deleteAppointmentLogic(id);
 
-            return reply.status(204).send()
+            return reply.status(204).send();
         }
-    )
+    );
 }

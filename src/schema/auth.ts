@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod";
 
 /**
  * Schema para o corpo da requisição de login.
@@ -6,7 +6,7 @@ import { z } from "zod"
 export const authLoginSchema = z.object({
     email: z.string().email("Insira um e-mail válido"),
     password: z.string().min(1, "Insira a senha"),
-})
+});
 
 /**
  * Schemas de resposta para a rota de login.
@@ -18,13 +18,13 @@ export const statusAuthLoginSchema = {
     500: z.object({
         message: z.string(),
     }),
-}
+};
 
 export const statusLogoutSchema = {
     200: z.object({
         message: z.string(),
     }),
-}
+};
 
 export const statusCSRFTokenSchema = {
     201: z.object({
@@ -33,7 +33,7 @@ export const statusCSRFTokenSchema = {
     500: z.object({
         message: z.string(),
     }),
-}
+};
 
 /**
  * Schema de resposta para verificar autenticação.
@@ -79,7 +79,13 @@ export const verifyAuthSchema = {
             })
         ),
     }),
-}
+    401: z.object({
+        message: z.string(),
+    }),
+    500: z.object({
+        message: z.string(),
+    }),
+};
 
 /**
  * Schema para dados de um funcionário.
@@ -91,4 +97,4 @@ export const employeeSchema = z.object({
     id: z.string().uuid(), // UUID
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date(),
-})
+});

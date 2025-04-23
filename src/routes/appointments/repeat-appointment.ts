@@ -1,13 +1,13 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { z } from "zod"
-import { addDays, isSameDay, isBefore, getDay, set } from "date-fns"
-import { prisma } from "../../../prisma/db"
-import { BadRequest, NotFound } from "../_errors/route-error"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
+import { addDays, isSameDay, isBefore, getDay, set } from "date-fns";
+import { prisma } from "../../../prisma/db";
+import { BadRequest, NotFound } from "../_errors/route-error";
 import {
     repeatAppointmentSchema,
     statusRepeatAppointmentSchema,
-} from "../../schema/appointment"
+} from "../../schema/appointment";
 
 /**
  * Gera datas futuras para as sessões baseadas nos dias da semana e quantidade.
@@ -18,12 +18,12 @@ function generateSessionDates(
     totalSessions: number,
     daysOfWeek: number[]
 ): Date[] {
-    const sessionDates: Date[] = []
-    let currentDate = addDays(lastSessionDate, 1) // Começa no dia seguinte à última sessão
-    let sessionsGenerated = 0
+    const sessionDates: Date[] = [];
+    let currentDate = addDays(lastSessionDate, 1); // Começa no dia seguinte à última sessão
+    let sessionsGenerated = 0;
 
     while (sessionsGenerated < totalSessions) {
-        const dayOfWeek = getDay(currentDate)
+        const dayOfWeek = getDay(currentDate);
         if (daysOfWeek.includes(dayOfWeek)) {
             if (
                 !isBefore(currentDate, new Date()) ||
@@ -35,15 +35,15 @@ function generateSessionDates(
                     minutes: lastSessionTime.minutes,
                     seconds: 0,
                     milliseconds: 0,
-                })
-                sessionDates.push(sessionDate)
-                sessionsGenerated++
+                });
+                sessionDates.push(sessionDate);
+                sessionsGenerated++;
             }
         }
-        currentDate = addDays(currentDate, 1) // Avança um dia
+        currentDate = addDays(currentDate, 1); // Avança um dia
     }
 
-    return sessionDates
+    return sessionDates;
 }
 
 /**
@@ -58,34 +58,34 @@ async function repeatAppointmentLogic(
     const originalAppointment = await prisma.appointment.findUnique({
         where: { id: appointmentId },
         include: { sessions: true },
-    })
+    });
 
     if (!originalAppointment) {
-        throw new NotFound("Agendamento não encontrado")
+        throw new NotFound("Agendamento não encontrado");
     }
 
     // Verifica se todas as sessões existentes estão finalizadas
     const allSessionsFinalized = originalAppointment.sessions.every(
-        session =>
+        (session) =>
             session.status === "FINALIZADO" || session.status === "CANCELADO"
-    )
+    );
     if (!allSessionsFinalized) {
         throw new BadRequest(
             "A repetição só é permitida para agendamentos com todas as sessões finalizadas ou canceladas"
-        )
+        );
     }
 
     // Pega a última sessão como base
     const lastSession = originalAppointment.sessions.sort(
         (a, b) => b.appointmentDate.getTime() - a.appointmentDate.getTime()
-    )[0]
+    )[0];
     const lastSessionDateUTC3 = new Date(
         lastSession.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-    ) // Converte de UTC para UTC-3
+    ); // Converte de UTC para UTC-3
     const lastSessionTime = {
         hours: lastSessionDateUTC3.getHours(),
         minutes: lastSessionDateUTC3.getMinutes(),
-    }
+    };
 
     // Gera as datas das novas sessões
     const sessionDates = generateSessionDates(
@@ -93,7 +93,7 @@ async function repeatAppointmentLogic(
         lastSessionTime,
         totalSessions,
         daysOfWeek
-    )
+    );
 
     // Cria um novo Appointment com as mesmas informações gerais
     const newAppointment = await prisma.appointment.create({
@@ -103,12 +103,14 @@ async function repeatAppointmentLogic(
             clinicalRecordId: originalAppointment.clinicalRecordId,
             totalSessions, // Total de sessões do novo agendamento
         },
-    })
+    });
 
     // Cria as novas sessões vinculadas ao novo Appointment
     const newSessions = await Promise.all(
         sessionDates.map((date, index) => {
-            const sessionDateUTC = new Date(date.getTime() + 3 * 60 * 60 * 1000) // Converte para UTC
+            const sessionDateUTC = new Date(
+                date.getTime() + 3 * 60 * 60 * 1000
+            ); // Converte para UTC
             return prisma.session.create({
                 data: {
                     appointmentId: newAppointment.id,
@@ -118,24 +120,24 @@ async function repeatAppointmentLogic(
                     status: "SOLICITADO",
                     progress: null,
                 },
-            })
+            });
         })
-    )
+    );
 
     // Converte as datas de volta para UTC-3 ao retornar
-    const sessionsInUtcMinus3 = newSessions.map(session => ({
+    const sessionsInUtcMinus3 = newSessions.map((session) => ({
         ...session,
         appointmentDate: new Date(
             session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
         )
             .toISOString()
             .replace("Z", "-03:00"),
-    }))
+    }));
 
     return {
         appointmentId: newAppointment.id,
-        sessionIds: sessionsInUtcMinus3.map(session => session.id),
-    }
+        sessionIds: sessionsInUtcMinus3.map((session) => session.id),
+    };
 }
 
 /**
@@ -159,24 +161,24 @@ export async function repeatAppointment(app: FastifyInstance) {
         },
         async (
             request: FastifyRequest<{
-                Params: { id: string }
-                Body: z.infer<typeof repeatAppointmentSchema>
+                Params: { id: string };
+                Body: z.infer<typeof repeatAppointmentSchema>;
             }>,
             reply
         ) => {
-            const { id } = request.params
-            const { totalSessions, daysOfWeek } = request.body
+            const { id } = request.params;
+            const { totalSessions, daysOfWeek } = request.body;
 
             const result = await repeatAppointmentLogic(
                 id,
                 totalSessions,
                 daysOfWeek
-            )
+            );
 
             return reply.status(201).send({
                 appointmentId: result.appointmentId,
                 sessionIds: result.sessionIds,
-            })
+            });
         }
-    )
+    );
 }

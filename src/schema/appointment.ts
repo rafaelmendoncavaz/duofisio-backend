@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod";
 
 /**
  * Schema para criar um novo agendamento.
@@ -29,7 +29,7 @@ export const createAppointmentSchema = z.object({
     clinicalRecordId: z
         .string()
         .uuid("ID do registro clínico deve ser um UUID"),
-})
+});
 
 /**
  * Schema de resposta para criação de agendamento.
@@ -41,7 +41,7 @@ export const statusCreateAppointmentSchema = {
     500: z.object({
         message: z.string(),
     }),
-}
+};
 
 /**
  * Schema para a repetição de agendamento.
@@ -62,7 +62,7 @@ export const repeatAppointmentSchema = z.object({
                 )
         )
         .min(1, "Selecione pelo menos um dia da semana"),
-})
+});
 
 /**
  * Schema de resposta para repetição de agendamento.
@@ -82,7 +82,7 @@ export const statusRepeatAppointmentSchema = {
     404: z.object({
         message: z.string(),
     }),
-}
+};
 
 /**
  * Schema de resposta para lista de agendamentos.
@@ -131,7 +131,7 @@ export const statusGetAppointmentsSchema = {
     500: z.object({
         message: z.string(),
     }),
-}
+};
 
 /**
  * Schema de resposta para um agendamento específico de um paciente.
@@ -184,7 +184,7 @@ export const statusGetSinglePatientAppointments = {
     500: z.object({
         message: z.string(),
     }),
-}
+};
 
 /**
  * Schema para atualizar um agendamento.
@@ -209,7 +209,7 @@ export const updateAppointmentSchema = z.object({
         .string()
         .uuid("ID do funcionário deve ser um UUID")
         .optional(),
-})
+});
 
 /**
  * Schema de resposta para atualização de agendamento.
@@ -222,7 +222,7 @@ export const statusUpdateAppointmentSchema = {
     500: z.object({
         message: z.string(),
     }),
-}
+};
 
 /**
  * Schema de resposta para exclusão de agendamento.
@@ -235,4 +235,4 @@ export const statusDeleteAppointmentSchema = {
     500: z.object({
         message: z.string(),
     }),
-}
+};

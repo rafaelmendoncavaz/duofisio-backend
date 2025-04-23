@@ -1,12 +1,12 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
 import {
     getPatientDataSchema,
     statusGetSingleClinicalRecordSchema,
-} from "../../schema/schema"
-import { prisma } from "../../../prisma/db"
-import { NotFound } from "../_errors/route-error"
+} from "../../schema/schema";
+import { prisma } from "../../../prisma/db";
+import { NotFound } from "../_errors/route-error";
 
 /**
  * Verifica se o paciente existe pelo ID.
@@ -15,17 +15,17 @@ import { NotFound } from "../_errors/route-error"
 export async function checkPatientExists(id: string): Promise<void> {
     const patient = await prisma.patients.findUnique({
         where: { id },
-    })
+    });
 
     if (!patient) {
-        throw new NotFound("Paciente não encontrado")
+        throw new NotFound("Paciente não encontrado");
     }
 }
 
 // Tipo ajustado para incluir ambos os parâmetros
 type ClinicalRecordParams = z.infer<typeof getPatientDataSchema> & {
-    recordId: number
-}
+    recordId: number;
+};
 
 /**
  * Busca um registro clínico específico de um paciente.
@@ -37,13 +37,13 @@ async function getClinicalRecord(patientId: string, recordId: string) {
             id: recordId,
             patientId,
         },
-    })
+    });
 
     if (!clinicalRecord) {
-        throw new NotFound("Registro clínico não encontrado")
+        throw new NotFound("Registro clínico não encontrado");
     }
 
-    return clinicalRecord
+    return clinicalRecord;
 }
 
 /**
@@ -66,12 +66,12 @@ export async function getSingleClinicalRecord(app: FastifyInstance) {
             request: FastifyRequest<{ Params: ClinicalRecordParams }>,
             reply
         ) => {
-            const { id, recordId } = request.params
+            const { id, recordId } = request.params;
 
-            await checkPatientExists(id)
-            const clinicalRecord = await getClinicalRecord(id, recordId)
+            await checkPatientExists(id);
+            const clinicalRecord = await getClinicalRecord(id, recordId);
 
-            return reply.status(200).send({ clinicalRecord })
+            return reply.status(200).send({ clinicalRecord });
         }
-    )
+    );
 }

@@ -1,15 +1,15 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
-import { prisma } from "../../../prisma/db"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
+import { prisma } from "../../../prisma/db";
 import {
     getPatientDataSchema,
     statusPatientDataSchema,
-} from "../../schema/schema"
-import { NotFound } from "../_errors/route-error"
+} from "../../schema/schema";
+import { NotFound } from "../_errors/route-error";
 
 // Tipo dos parâmetros baseado no schema
-type PatientParams = z.infer<typeof getPatientDataSchema>
+type PatientParams = z.infer<typeof getPatientDataSchema>;
 
 /**
  * Busca os detalhes de um paciente pelo ID.
@@ -96,13 +96,13 @@ async function getPatientById(id: string) {
                 },
             },
         },
-    })
+    });
 
     if (!patient) {
-        throw new NotFound("Patient not found")
+        throw new NotFound("Patient not found");
     }
 
-    return patient
+    return patient;
 }
 
 /**
@@ -122,9 +122,9 @@ export async function getPatient(app: FastifyInstance) {
             },
         },
         async (request: FastifyRequest<{ Params: PatientParams }>, reply) => {
-            const { id } = request.params
-            const patient = await getPatientById(id)
-            return reply.status(200).send({ patient })
+            const { id } = request.params;
+            const patient = await getPatientById(id);
+            return reply.status(200).send({ patient });
         }
-    )
+    );
 }

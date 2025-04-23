@@ -1,8 +1,8 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { prisma } from "../../../prisma/db"
-import { statusGetPatientsSchema } from "../../schema/schema"
-import { NotFound } from "../_errors/route-error"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { prisma } from "../../../prisma/db";
+import { statusGetPatientsSchema } from "../../schema/schema";
+import { NotFound } from "../_errors/route-error";
 
 /**
  * Busca a lista de todos os pacientes ordenados por nome.
@@ -36,13 +36,13 @@ async function fetchAllPatients() {
             },
         },
         orderBy: { name: "asc" },
-    })
+    });
 
     if (patients.length === 0) {
-        throw new NotFound("Nenhum paciente encontrado")
+        throw new NotFound("Nenhum paciente encontrado");
     }
 
-    return patients
+    return patients;
 }
 
 /**
@@ -60,8 +60,8 @@ export async function getPatients(app: FastifyInstance) {
             },
         },
         async (request: FastifyRequest, reply) => {
-            const patients = await fetchAllPatients()
-            return reply.status(200).send({ patients })
+            const patients = await fetchAllPatients();
+            return reply.status(200).send({ patients });
         }
-    )
+    );
 }

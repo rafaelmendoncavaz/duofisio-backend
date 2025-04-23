@@ -1,7 +1,7 @@
-import type { FastifyPluginAsync } from "fastify"
-import { prisma } from "../../prisma/db"
-import { verifyAuthSchema } from "../schema/auth"
-import { Unauthorized } from "./_errors/route-error"
+import type { FastifyPluginAsync } from "fastify";
+import { prisma } from "../../prisma/db";
+import { verifyAuthSchema } from "../schema/auth";
+import { NotFound, Unauthorized } from "./_errors/route-error";
 
 async function getUserById(userId: string) {
     const user = await prisma.employees.findUnique({
@@ -38,9 +38,9 @@ async function getUserById(userId: string) {
                 },
             },
         },
-    })
+    });
 
-    return user
+    return user;
 }
 
 async function getEmployees() {
@@ -49,12 +49,12 @@ async function getEmployees() {
             name: true,
             id: true,
         },
-    })
+    });
 
-    return employees
+    return employees;
 }
 
-export const verifyAuth: FastifyPluginAsync = async app => {
+export const verifyAuth: FastifyPluginAsync = async (app) => {
     app.get(
         "/verify",
         {
@@ -66,21 +66,36 @@ export const verifyAuth: FastifyPluginAsync = async app => {
             },
         },
         async (request, reply) => {
-            // request.user contém o payload do JWT após o jwtVerify
-            const userId = request.user.id
+            try {
+                await request.jwtVerify();
+                const { user } = request;
 
-            const user = await getUserById(userId)
+                if (!user) throw new NotFound("Usuário não encontrado");
 
-            if (!user)
-                throw new Unauthorized("Erro ao buscar o token de autorização")
+                const userId = user.id;
 
-            const employees = await getEmployees()
+                const loggingUser = await getUserById(userId);
 
-            return reply.status(200).send({
-                message: "Autenticado",
-                user,
-                employees,
-            })
+                if (!loggingUser)
+                    throw new Unauthorized(
+                        "Erro ao buscar o token de autorização"
+                    );
+
+                const employees = await getEmployees();
+
+                return reply.status(200).send({
+                    message: "Autenticado",
+                    user: loggingUser,
+                    employees,
+                });
+            } catch (error) {
+                if (error instanceof Unauthorized) {
+                    return reply
+                        .status(401)
+                        .send({ message: "Token inválido ou ausente" });
+                }
+                return reply.status(500).send({ message: "Erro interno" });
+            }
         }
-    )
-}
+    );
+};

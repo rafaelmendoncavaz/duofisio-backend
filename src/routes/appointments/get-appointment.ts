@@ -1,9 +1,9 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { z } from "zod"
-import { prisma } from "../../../prisma/db"
-import { NotFound } from "../_errors/route-error"
-import { statusGetSinglePatientAppointments } from "../../schema/appointment"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
+import { prisma } from "../../../prisma/db";
+import { NotFound } from "../_errors/route-error";
+import { statusGetSinglePatientAppointments } from "../../schema/appointment";
 
 /**
  * Busca os detalhes de uma sessão específica.
@@ -50,10 +50,10 @@ async function getSessionById(sessionId: string) {
                 },
             },
         },
-    })
+    });
 
     if (!session) {
-        throw new NotFound("Sessão não encontrada")
+        throw new NotFound("Sessão não encontrada");
     }
 
     // Converte a data de UTC para UTC-3
@@ -61,7 +61,7 @@ async function getSessionById(sessionId: string) {
         session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
     )
         .toISOString()
-        .replace("Z", "-03:00")
+        .replace("Z", "-03:00");
 
     return {
         id: session.id,
@@ -92,7 +92,7 @@ async function getSessionById(sessionId: string) {
                 diagnosis: session.appointment.clinicalRecord.diagnosis,
             },
         },
-    }
+    };
 }
 
 /**
@@ -114,11 +114,11 @@ export async function getAppointment(app: FastifyInstance) {
             },
         },
         async (request: FastifyRequest<{ Params: { id: string } }>, reply) => {
-            const { id } = request.params
+            const { id } = request.params;
 
-            const session = await getSessionById(id)
+            const session = await getSessionById(id);
 
-            return reply.status(200).send({ session })
+            return reply.status(200).send({ session });
         }
-    )
+    );
 }

@@ -1,10 +1,10 @@
-import { z } from "zod"
+import { z } from "zod";
 import {
     addressSchema,
     adultResponsibleSchema,
     clinicalDataSchema,
-} from "./common"
-import { createNewPatientClinicalRecordSchema } from "./clinical"
+} from "./common";
+import { createNewPatientClinicalRecordSchema } from "./clinical";
 
 /**
  * Schema para criar um novo paciente.
@@ -20,7 +20,7 @@ export const createPatientSchema = z.object({
     address: addressSchema,
     clinicalData: createNewPatientClinicalRecordSchema,
     adultResponsible: adultResponsibleSchema,
-})
+});
 
 /**
  * Schema de resposta para criação de paciente.
@@ -29,7 +29,7 @@ export const statusCreatePatientSchema = {
     201: z.object({
         patientId: z.string().uuid(), // UUID
     }),
-}
+};
 
 /**
  * Schema para atualizar dados de um paciente.
@@ -44,7 +44,7 @@ export const updatePatientSchema = z.object({
     profession: z.string().nullable(),
     address: addressSchema,
     adultResponsible: adultResponsibleSchema,
-})
+});
 
 /**
  * Schema para parâmetros de busca de paciente.
@@ -52,7 +52,7 @@ export const updatePatientSchema = z.object({
 export const getPatientDataSchema = z.object({
     id: z.string().uuid(), // UUID
     recordId: z.string().uuid().optional(), // UUID
-})
+});
 
 /**
  * Schema de resposta para lista de pacientes.
@@ -92,7 +92,7 @@ export const statusGetPatientsSchema = {
             })
         ),
     }),
-}
+};
 
 /**
  * Schema de resposta para detalhes de um paciente.
@@ -145,4 +145,4 @@ export const statusPatientDataSchema = {
             ),
         }),
     }),
-}
+};

@@ -1,15 +1,15 @@
-import type { ZodError } from "zod"
-import type { FastifyRequest, FastifyReply } from "fastify"
-import type { FastifyErrorHandler } from "../../types/types"
-import type { BadRequest, NotFound, Unauthorized } from "./route-error"
+import type { ZodError } from "zod";
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyErrorHandler } from "../../types/types";
+import type { BadRequest, NotFound, Unauthorized } from "./route-error";
 
-type KnownError = Error | ZodError | BadRequest | Unauthorized | NotFound
+type KnownError = Error | ZodError | BadRequest | Unauthorized | NotFound;
 
 type ErrorConfig<T extends KnownError = KnownError> = {
-    status: number
-    message: string | ((error: T) => string)
-    extra?: (error: T) => Record<string, unknown>
-}
+    status: number;
+    message: string | ((error: T) => string);
+    extra?: (error: T) => Record<string, unknown>;
+};
 
 const ERROR_MAP = {
     ZodError: {
@@ -29,7 +29,7 @@ const ERROR_MAP = {
         status: 404,
         message: (error: NotFound) => error.message,
     } as ErrorConfig<NotFound>,
-}
+};
 
 const sendErrorResponse = (
     reply: FastifyReply,
@@ -40,8 +40,8 @@ const sendErrorResponse = (
     return reply.status(status).send({
         message,
         ...(extra || {}),
-    })
-}
+    });
+};
 
 // Função auxiliar para chamar a config com o tipo correto
 const handleKnownError = <T extends KnownError>(
@@ -52,10 +52,10 @@ const handleKnownError = <T extends KnownError>(
     const message =
         typeof config.message === "function"
             ? config.message(error)
-            : config.message
-    const extra = config.extra ? config.extra(error) : undefined
-    return sendErrorResponse(reply, config.status, message, extra)
-}
+            : config.message;
+    const extra = config.extra ? config.extra(error) : undefined;
+    return sendErrorResponse(reply, config.status, message, extra);
+};
 
 export const errorHandler: FastifyErrorHandler = (
     error: unknown,
@@ -63,13 +63,14 @@ export const errorHandler: FastifyErrorHandler = (
     reply: FastifyReply
 ) => {
     const errorName =
-        error instanceof Error ? error.constructor.name : "Unknown"
-    const errorConfig = ERROR_MAP[errorName as keyof typeof ERROR_MAP]
+        error instanceof Error ? error.constructor.name : "Unknown";
+    const errorConfig = ERROR_MAP[errorName as keyof typeof ERROR_MAP];
 
     if (errorConfig) {
-        return handleKnownError(reply, error as any, errorConfig)
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        return handleKnownError(reply, error as any, errorConfig);
     }
 
-    console.error("Unhandled error:", error)
-    return sendErrorResponse(reply, 500, "Internal Server Error")
-}
+    console.error("Unhandled error:", error);
+    return sendErrorResponse(reply, 500, "Internal Server Error");
+};

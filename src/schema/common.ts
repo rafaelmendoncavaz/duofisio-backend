@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod";
 
 /**
  * Schema para dados de endereço.
@@ -11,7 +11,7 @@ export const addressSchema = z.object({
     neighborhood: z.string().min(1, "Insira o nome do bairro"),
     city: z.string().min(1, "Insira a cidade"),
     state: z.string().min(2, "Insira o estado"),
-})
+});
 
 /**
  * Schema para dados clínicos.
@@ -24,7 +24,7 @@ export const clinicalDataSchema = z.object({
     CNS: z.string().nullable(),
     allegation: z.string().min(1, "Insira a queixa do paciente"),
     diagnosis: z.string().min(1, "Insira o diagnóstico"),
-})
+});
 
 /**
  * Schema para responsável adulto.
@@ -38,4 +38,4 @@ export const adultResponsibleSchema = z
         address: addressSchema,
     })
     .optional()
-    .nullable()
+    .nullable();

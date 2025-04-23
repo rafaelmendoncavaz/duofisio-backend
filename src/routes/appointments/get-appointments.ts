@@ -1,8 +1,8 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
-import { prisma } from "../../../prisma/db"
-import { statusGetAppointmentsSchema } from "../../schema/appointment"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
+import { prisma } from "../../../prisma/db";
+import { statusGetAppointmentsSchema } from "../../schema/appointment";
 
 /**
  * Busca todos os agendamentos com suas sessões, sem filtros de data.
@@ -48,9 +48,9 @@ async function getAppointmentsLogic() {
                 },
             },
         },
-    })
+    });
 
-    return appointments.map(appointment => ({
+    return appointments.map((appointment) => ({
         id: appointment.id,
         totalSessions: appointment.totalSessions,
         createdAt: appointment.createdAt,
@@ -70,7 +70,7 @@ async function getAppointmentsLogic() {
             allegation: appointment.clinicalRecord.allegation,
             diagnosis: appointment.clinicalRecord.diagnosis,
         },
-        sessions: appointment.sessions.map(session => ({
+        sessions: appointment.sessions.map((session) => ({
             id: session.id,
             appointmentDate: new Date(
                 session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
@@ -82,7 +82,7 @@ async function getAppointmentsLogic() {
             sessionNumber: session.sessionNumber,
             progress: session.progress,
         })),
-    }))
+    }));
 }
 
 /**
@@ -100,8 +100,8 @@ export async function getAppointments(app: FastifyInstance) {
             },
         },
         async (request, reply) => {
-            const appointments = await getAppointmentsLogic()
-            return reply.status(200).send({ appointments })
+            const appointments = await getAppointmentsLogic();
+            return reply.status(200).send({ appointments });
         }
-    )
+    );
 }

@@ -1,23 +1,23 @@
-import { hash } from "bcryptjs"
-import { prisma } from "../prisma/db"
-import { startOfDay, addDays, set, getDay } from "date-fns"
+import { hash } from "bcryptjs";
+import { prisma } from "../prisma/db";
+import { startOfDay, addDays, set, getDay } from "date-fns";
 
 async function seed() {
     // Limpa todas as tabelas para evitar duplicatas
-    await prisma.session.deleteMany() // Adicionado para limpar sessões
-    await prisma.appointment.deleteMany()
-    await prisma.clinicalData.deleteMany()
-    await prisma.adultResponsible.deleteMany()
-    await prisma.patients.deleteMany()
-    await prisma.address.deleteMany()
-    await prisma.employees.deleteMany()
+    await prisma.session.deleteMany(); // Adicionado para limpar sessões
+    await prisma.appointment.deleteMany();
+    await prisma.clinicalData.deleteMany();
+    await prisma.adultResponsible.deleteMany();
+    await prisma.patients.deleteMany();
+    await prisma.address.deleteMany();
+    await prisma.employees.deleteMany();
 
     // Cria senha padrão para o funcionário
-    const rafaPassword = await hash(process.env.RAFAEL_PASSWORD as string, 6)
-    const mariaPassword = await hash(process.env.MARIA_PASSWORD as string, 6)
-    const dennisPassword = await hash(process.env.DENNIS_PASSWORD as string, 6)
-    const lucasPassword = await hash(process.env.LUCAS_PASSWORD as string, 6)
-    const joaoPassword = await hash(process.env.JOAO_PASSWORD as string, 6)
+    const rafaPassword = await hash(process.env.RAFAEL_PASSWORD as string, 6);
+    const mariaPassword = await hash(process.env.MARIA_PASSWORD as string, 6);
+    const dennisPassword = await hash(process.env.DENNIS_PASSWORD as string, 6);
+    const lucasPassword = await hash(process.env.LUCAS_PASSWORD as string, 6);
+    const joaoPassword = await hash(process.env.JOAO_PASSWORD as string, 6);
 
     // Criação de Funcionários
     const employee1 = await prisma.employees.create({
@@ -27,7 +27,7 @@ async function seed() {
             email: process.env.RAFAEL_EMAIL as string,
             password: rafaPassword,
         },
-    })
+    });
 
     const employee2 = await prisma.employees.create({
         data: {
@@ -36,7 +36,7 @@ async function seed() {
             email: process.env.MARIA_EMAIL as string,
             password: mariaPassword,
         },
-    })
+    });
 
     await prisma.employees.createMany({
         data: [
@@ -59,7 +59,7 @@ async function seed() {
                 password: joaoPassword,
             },
         ],
-    })
+    });
 
     // Endereços para pacientes e responsáveis
     const address1 = await prisma.address.create({
@@ -73,7 +73,7 @@ async function seed() {
             city: "São Paulo",
             state: "SP",
         },
-    })
+    });
 
     const address2 = await prisma.address.create({
         data: {
@@ -85,7 +85,7 @@ async function seed() {
             city: "São Paulo",
             state: "SP",
         },
-    })
+    });
 
     const address3 = await prisma.address.create({
         data: {
@@ -97,7 +97,7 @@ async function seed() {
             city: "São Paulo",
             state: "SP",
         },
-    })
+    });
 
     // Responsável Adulto (criado antes do paciente dependente)
     const adultResponsible = await prisma.adultResponsible.create({
@@ -109,7 +109,7 @@ async function seed() {
             email: "maria.costa@exemplo.com",
             addressId: address2.id,
         },
-    })
+    });
 
     // Pacientes
     const patient1 = await prisma.patients.create({
@@ -124,7 +124,7 @@ async function seed() {
             profession: "Engenheiro",
             addressId: address1.id,
         },
-    })
+    });
 
     const patient2 = await prisma.patients.create({
         data: {
@@ -138,7 +138,7 @@ async function seed() {
             addressId: address2.id,
             adultResponsibleId: adultResponsible.id,
         },
-    })
+    });
 
     const patient3 = await prisma.patients.create({
         data: {
@@ -152,7 +152,7 @@ async function seed() {
             profession: "Professor",
             addressId: address3.id,
         },
-    })
+    });
 
     // Casos Clínicos
     const clinicalData1 = await prisma.clinicalData.create({
@@ -166,7 +166,7 @@ async function seed() {
             diagnosis: "Lombalgia",
             patientId: patient1.id,
         },
-    })
+    });
 
     const clinicalData2 = await prisma.clinicalData.create({
         data: {
@@ -176,7 +176,7 @@ async function seed() {
             diagnosis: "Asma",
             patientId: patient2.id,
         },
-    })
+    });
 
     const clinicalData3 = await prisma.clinicalData.create({
         data: {
@@ -186,7 +186,7 @@ async function seed() {
             diagnosis: "Transtorno de ansiedade",
             patientId: patient3.id,
         },
-    })
+    });
 
     // Função auxiliar para gerar datas de sessões com base em daysOfWeek
     function generateSessionDates(
@@ -194,25 +194,25 @@ async function seed() {
         totalSessions: number,
         daysOfWeek: number[]
     ): Date[] {
-        const sessionDates: Date[] = []
-        let currentDate = startDate
-        let sessionsGenerated = 0
+        const sessionDates: Date[] = [];
+        let currentDate = startDate;
+        let sessionsGenerated = 0;
 
         while (sessionsGenerated < totalSessions) {
-            const dayOfWeek = getDay(currentDate)
+            const dayOfWeek = getDay(currentDate);
             if (daysOfWeek.includes(dayOfWeek)) {
-                sessionDates.push(new Date(currentDate))
-                sessionsGenerated++
+                sessionDates.push(new Date(currentDate));
+                sessionsGenerated++;
             }
-            currentDate = addDays(currentDate, 1)
+            currentDate = addDays(currentDate, 1);
         }
 
-        return sessionDates
+        return sessionDates;
     }
 
     // Agendamentos com Sessões
-    const baseDate = startOfDay(new Date()) // Hoje em UTC-3
-    const baseDateUtcMinus3 = new Date(baseDate.getTime() - 3 * 60 * 60 * 1000)
+    const baseDate = startOfDay(new Date()); // Hoje em UTC-3
+    const baseDateUtcMinus3 = new Date(baseDate.getTime() - 3 * 60 * 60 * 1000);
 
     // Agendamento 1: João Silva (3 sessões às segundas e quintas)
     const appointment1 = await prisma.appointment.create({
@@ -223,13 +223,13 @@ async function seed() {
             employeeId: employee1.id,
             clinicalRecordId: clinicalData1.id,
         },
-    })
+    });
 
     const sessionDates1 = generateSessionDates(
         set(baseDateUtcMinus3, { hours: 9, minutes: 0 }),
         3,
         [1, 4] // Segunda e Quinta
-    )
+    );
 
     await prisma.session.createMany({
         data: sessionDates1.map((date, index) => ({
@@ -241,7 +241,7 @@ async function seed() {
             status: index === 0 ? "FINALIZADO" : "SOLICITADO",
             progress: index === 0 ? "Paciente relatou melhora na dor" : null,
         })),
-    })
+    });
 
     // Agendamento 2: Ana Costa (2 sessões às terças)
     const appointment2 = await prisma.appointment.create({
@@ -252,13 +252,13 @@ async function seed() {
             employeeId: employee2.id,
             clinicalRecordId: clinicalData2.id,
         },
-    })
+    });
 
     const sessionDates2 = generateSessionDates(
         set(addDays(baseDateUtcMinus3, 1), { hours: 10, minutes: 30 }),
         2,
         [2] // Terça
-    )
+    );
 
     await prisma.session.createMany({
         data: sessionDates2.map((date, index) => ({
@@ -270,7 +270,7 @@ async function seed() {
             status: "SOLICITADO",
             progress: null,
         })),
-    })
+    });
 
     // Agendamento 3: Pedro Almeida (4 sessões às quartas e sextas)
     const appointment3 = await prisma.appointment.create({
@@ -281,13 +281,13 @@ async function seed() {
             employeeId: employee1.id,
             clinicalRecordId: clinicalData3.id,
         },
-    })
+    });
 
     const sessionDates3 = generateSessionDates(
         set(addDays(baseDateUtcMinus3, 2), { hours: 14, minutes: 0 }),
         4,
         [3, 5] // Quarta e Sexta
-    )
+    );
 
     await prisma.session.createMany({
         data: sessionDates3.map((date, index) => ({
@@ -299,16 +299,16 @@ async function seed() {
             status: index === 0 ? "CONFIRMADO" : "SOLICITADO",
             progress: null,
         })),
-    })
+    });
 
-    console.log("Seed concluído com sucesso!")
+    console.log("Seed concluído com sucesso!");
 }
 
 seed()
-    .catch(e => {
-        console.error("Erro ao executar o seed:", e)
-        process.exit(1)
+    .catch((e) => {
+        console.error("Erro ao executar o seed:", e);
+        process.exit(1);
     })
     .finally(async () => {
-        await prisma.$disconnect()
-    })
+        await prisma.$disconnect();
+    });

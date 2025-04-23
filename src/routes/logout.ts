@@ -1,6 +1,6 @@
-import type { FastifyInstance } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { authLoginSchema, statusLogoutSchema } from "../schema/schema"
+import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { authLoginSchema, statusLogoutSchema } from "../schema/schema";
 
 export async function logOut(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().post(
@@ -10,7 +10,6 @@ export async function logOut(app: FastifyInstance) {
             schema: {
                 tags: ["Auth Login"],
                 summary: "Logout and Clear Cookie",
-                body: authLoginSchema,
                 response: statusLogoutSchema,
             },
         },
@@ -18,7 +17,7 @@ export async function logOut(app: FastifyInstance) {
             return reply
                 .clearCookie("dfauth", { path: "/" })
                 .status(200)
-                .send({ message: "Logout efetuado com sucesso!" })
+                .send({ message: "Logout efetuado com sucesso!" });
         }
-    )
+    );
 }

@@ -1,13 +1,13 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import { z } from "zod"
-import { isBefore, isSameDay } from "date-fns"
-import { prisma } from "../../../prisma/db"
-import { BadRequest, NotFound } from "../_errors/route-error"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
+import { isBefore, isSameDay } from "date-fns";
+import { prisma } from "../../../prisma/db";
+import { BadRequest, NotFound } from "../_errors/route-error";
 import {
     updateAppointmentSchema,
     statusUpdateAppointmentSchema,
-} from "../../schema/appointment"
+} from "../../schema/appointment";
 
 /**
  * Atualiza uma sessão específica de um agendamento existente e, se necessário, o funcionário no Appointment.
@@ -15,21 +15,21 @@ import {
 async function updateSessionLogic(
     sessionId: string,
     updates: Partial<{
-        appointmentDate: Date
-        duration: number
-        employeeId: string
-        status: string
-        progress: string | null
+        appointmentDate: Date;
+        duration: number;
+        employeeId: string;
+        status: string;
+        progress: string | null;
     }>
 ) {
     // Busca a sessão atual com o agendamento relacionado
     const session = await prisma.session.findUnique({
         where: { id: sessionId },
         include: { appointment: true },
-    })
+    });
 
     if (!session) {
-        throw new NotFound("Sessão não encontrada")
+        throw new NotFound("Sessão não encontrada");
     }
 
     // Prepara os dados atualizados para a sessão
@@ -46,16 +46,16 @@ async function updateSessionLogic(
             updates.progress !== undefined
                 ? updates.progress
                 : session.progress,
-    }
+    };
 
     // Validações de data apenas se status não for "FINALIZADO"
-    const now = new Date(new Date().getTime() - 3 * 60 * 60 * 1000) // Ajustar para UTC-3
+    const now = new Date(new Date().getTime() - 3 * 60 * 60 * 1000); // Ajustar para UTC-3
     if (
         updatedData.status !== "FINALIZADO" && // Ignora validação se status for FINALIZADO
         isBefore(updatedData.appointmentDate, now) &&
         !isSameDay(updatedData.appointmentDate, now)
     ) {
-        throw new BadRequest("A data da sessão deve ser hoje ou no futuro")
+        throw new BadRequest("A data da sessão deve ser hoje ou no futuro");
     }
 
     // Usa a data original se status for "FINALIZADO", "CONFIRMADO" ou "CANCELADO" e appointmentDate não foi enviado
@@ -66,7 +66,7 @@ async function updateSessionLogic(
             ? session.appointmentDate // Mantém a data original
             : new Date(
                   updatedData.appointmentDate.getTime() + 3 * 60 * 60 * 1000
-              ) // Converte para UTC
+              ); // Converte para UTC
 
     // Atualiza o Appointment se employeeId for fornecido e diferente do atual
     if (
@@ -76,7 +76,7 @@ async function updateSessionLogic(
         await prisma.appointment.update({
             where: { id: session.appointmentId },
             data: { employeeId: updates.employeeId },
-        })
+        });
     }
 
     // Atualiza a sessão
@@ -95,7 +95,7 @@ async function updateSessionLogic(
                 },
             },
         },
-    })
+    });
 
     // Converte a data de volta para UTC-3 ao retornar
     const sessionInUtcMinus3 = {
@@ -105,9 +105,9 @@ async function updateSessionLogic(
         )
             .toISOString()
             .replace("Z", "-03:00"),
-    }
+    };
 
-    return sessionInUtcMinus3
+    return sessionInUtcMinus3;
 }
 
 /**
@@ -132,33 +132,33 @@ export async function updateAppointment(app: FastifyInstance) {
         },
         async (
             request: FastifyRequest<{
-                Params: { id: string }
-                Body: z.infer<typeof updateAppointmentSchema>
+                Params: { id: string };
+                Body: z.infer<typeof updateAppointmentSchema>;
             }>,
             reply
         ) => {
-            const { id } = request.params
+            const { id } = request.params;
             const { appointmentDate, duration, employeeId, status, progress } =
-                request.body
+                request.body;
 
             const updates: Partial<{
-                appointmentDate: Date
-                duration: number
-                employeeId: string
-                status: string
-                progress: string | null
-            }> = {}
+                appointmentDate: Date;
+                duration: number;
+                employeeId: string;
+                status: string;
+                progress: string | null;
+            }> = {};
 
             if (appointmentDate)
-                updates.appointmentDate = new Date(appointmentDate)
-            if (duration) updates.duration = duration
-            if (employeeId) updates.employeeId = employeeId
-            if (status) updates.status = status
-            if (progress !== undefined) updates.progress = progress
+                updates.appointmentDate = new Date(appointmentDate);
+            if (duration) updates.duration = duration;
+            if (employeeId) updates.employeeId = employeeId;
+            if (status) updates.status = status;
+            if (progress !== undefined) updates.progress = progress;
 
-            await updateSessionLogic(id, updates)
+            await updateSessionLogic(id, updates);
 
-            return reply.status(202).send()
+            return reply.status(202).send();
         }
-    )
+    );
 }

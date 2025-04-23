@@ -1,16 +1,16 @@
-import type { FastifyInstance } from "fastify"
-import type { FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
+import type { FastifyInstance } from "fastify";
+import type { FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
 import {
     createPatientSchema,
     statusCreatePatientSchema,
-} from "../../schema/schema"
-import { prisma } from "../../../prisma/db"
-import { BadRequest } from "../_errors/route-error"
+} from "../../schema/schema";
+import { prisma } from "../../../prisma/db";
+import { BadRequest } from "../_errors/route-error";
 
 // Tipo do corpo da requisição baseado no schema
-type CreatePatientBody = z.infer<typeof createPatientSchema>
+type CreatePatientBody = z.infer<typeof createPatientSchema>;
 
 /**
  * Verifica se já existe um paciente com o mesmo CPF ou email.
@@ -21,10 +21,10 @@ async function checkPatientExists(cpf: string): Promise<void> {
         where: {
             cpf,
         },
-    })
+    });
 
     if (existingPatient) {
-        throw new BadRequest("CPF já cadastrado")
+        throw new BadRequest("CPF já cadastrado");
     }
 }
 
@@ -84,7 +84,7 @@ function buildPatientData(body: CreatePatientBody) {
                 diagnosis: body.clinicalData.diagnosis,
             },
         },
-    }
+    };
 }
 
 /**
@@ -104,9 +104,9 @@ export async function addPatient(app: FastifyInstance) {
             },
         },
         async (request: FastifyRequest<{ Body: CreatePatientBody }>, reply) => {
-            const body = request.body
+            const body = request.body;
 
-            await checkPatientExists(body.cpf)
+            await checkPatientExists(body.cpf);
 
             const patient = await prisma.patients.create({
                 data: buildPatientData(body),
@@ -119,9 +119,9 @@ export async function addPatient(app: FastifyInstance) {
                         },
                     },
                 },
-            })
+            });
 
-            return reply.status(201).send({ patientId: patient.id })
+            return reply.status(201).send({ patientId: patient.id });
         }
-    )
+    );
 }

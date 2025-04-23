@@ -1,13 +1,13 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
-import { getPatientDataSchema, updatePatientSchema } from "../../schema/schema"
-import { prisma } from "../../../prisma/db"
-import { BadRequest } from "../_errors/route-error"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
+import { getPatientDataSchema, updatePatientSchema } from "../../schema/schema";
+import { prisma } from "../../../prisma/db";
+import { BadRequest } from "../_errors/route-error";
 
 // Tipos baseados nos schemas
-type PatientParams = z.infer<typeof getPatientDataSchema>
-type UpdatePatientBody = z.infer<typeof updatePatientSchema>
+type PatientParams = z.infer<typeof getPatientDataSchema>;
+type UpdatePatientBody = z.infer<typeof updatePatientSchema>;
 
 /**
  * Verifica se o paciente existe pelo ID.
@@ -16,10 +16,10 @@ type UpdatePatientBody = z.infer<typeof updatePatientSchema>
 async function checkPatientExists(id: string): Promise<void> {
     const patient = await prisma.patients.findUnique({
         where: { id },
-    })
+    });
 
     if (!patient) {
-        throw new BadRequest("Este paciente não existe")
+        throw new BadRequest("Este paciente não existe");
     }
 }
 
@@ -37,12 +37,12 @@ async function checkDuplicateCpfOrEmail(
             OR: [{ cpf }, { email }],
             id: { not: id },
         },
-    })
+    });
 
     if (duplicate) {
         throw new BadRequest(
             "Um destes dados já está sendo usado por outro paciente: CPF, Email"
-        )
+        );
     }
 }
 
@@ -92,7 +92,7 @@ function buildUpdateData(body: UpdatePatientBody) {
                   },
               }
             : undefined,
-    }
+    };
 }
 
 /**
@@ -113,16 +113,16 @@ export async function updatePatient(app: FastifyInstance) {
         },
         async (
             request: FastifyRequest<{
-                Params: PatientParams
-                Body: UpdatePatientBody
+                Params: PatientParams;
+                Body: UpdatePatientBody;
             }>,
             reply
         ) => {
-            const { id } = request.params
-            const body = request.body
+            const { id } = request.params;
+            const body = request.body;
 
-            await checkPatientExists(id)
-            await checkDuplicateCpfOrEmail(id, body.cpf, body.email)
+            await checkPatientExists(id);
+            await checkDuplicateCpfOrEmail(id, body.cpf, body.email);
 
             await prisma.patients.update({
                 where: { id },
@@ -131,9 +131,9 @@ export async function updatePatient(app: FastifyInstance) {
                     address: true,
                     adultResponsible: true,
                 },
-            })
+            });
 
-            return reply.status(204).send()
+            return reply.status(204).send();
         }
-    )
+    );
 }

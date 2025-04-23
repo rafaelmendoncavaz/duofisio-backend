@@ -9,7 +9,9 @@
     "dev": "tsx watch src/server/server.ts",
     "postinstall": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "biome:lint": "biome lint",
+    "biome:format": "biome format"
   },
   "keywords": [],
   "author": "",

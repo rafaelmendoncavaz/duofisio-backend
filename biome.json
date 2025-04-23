@@ -10,10 +10,10 @@
 	},
 	"javascript": {
 		"formatter": {
-			"arrowParentheses": "asNeeded",
+			"arrowParentheses": "always",
 			"jsxQuoteStyle": "double",
 			"quoteStyle": "double",
-			"semicolons": "asNeeded",
+			"semicolons": "always",
 			"trailingCommas": "es5"
 		}
 	},

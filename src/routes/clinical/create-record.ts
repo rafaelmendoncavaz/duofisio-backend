@@ -1,17 +1,17 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
 import {
     createNewClinicalRecordSchema,
     getPatientDataSchema,
     statusClinicalRecordCreatedSchema,
-} from "../../schema/schema"
-import { prisma } from "../../../prisma/db"
-import { BadRequest, NotFound } from "../_errors/route-error"
+} from "../../schema/schema";
+import { prisma } from "../../../prisma/db";
+import { BadRequest, NotFound } from "../_errors/route-error";
 
 // Tipos baseados nos schemas
-type PatientParams = z.infer<typeof getPatientDataSchema>
-type ClinicalRecordBody = z.infer<typeof createNewClinicalRecordSchema>
+type PatientParams = z.infer<typeof getPatientDataSchema>;
+type ClinicalRecordBody = z.infer<typeof createNewClinicalRecordSchema>;
 
 /**
  * Verifica se o paciente existe pelo ID.
@@ -21,13 +21,13 @@ async function checkPatientExists(id: string) {
     const patient = await prisma.patients.findUnique({
         where: { id },
         include: { clinicalData: true },
-    })
+    });
 
     if (!patient) {
-        throw new NotFound("Paciente não encontrado")
+        throw new NotFound("Paciente não encontrado");
     }
 
-    return patient
+    return patient;
 }
 
 /**
@@ -38,13 +38,13 @@ async function getPatientCNS(patientId: string): Promise<string | null> {
     const clinicalData = await prisma.clinicalData.findFirst({
         where: { patientId },
         select: { CNS: true },
-    })
+    });
 
     if (!clinicalData) {
-        throw new BadRequest("Paciente não possui CNS cadastrado")
+        throw new BadRequest("Paciente não possui CNS cadastrado");
     }
 
-    return clinicalData.CNS
+    return clinicalData.CNS;
 }
 
 /**
@@ -65,7 +65,7 @@ async function createClinicalRecord(
             diagnosis: body.diagnosis,
             patientId,
         },
-    })
+    });
 }
 
 /**
@@ -87,21 +87,21 @@ export async function addClinicalRecord(app: FastifyInstance) {
         },
         async (
             request: FastifyRequest<{
-                Params: PatientParams
-                Body: ClinicalRecordBody
+                Params: PatientParams;
+                Body: ClinicalRecordBody;
             }>,
             reply
         ) => {
-            const { id } = request.params
-            const body = request.body
+            const { id } = request.params;
+            const body = request.body;
 
-            await checkPatientExists(id)
-            const cns = await getPatientCNS(id)
-            await createClinicalRecord(id, cns, body)
+            await checkPatientExists(id);
+            const cns = await getPatientCNS(id);
+            await createClinicalRecord(id, cns, body);
 
             return reply
                 .status(201)
-                .send({ message: "Registro criado com sucesso!" })
+                .send({ message: "Registro criado com sucesso!" });
         }
-    )
+    );
 }

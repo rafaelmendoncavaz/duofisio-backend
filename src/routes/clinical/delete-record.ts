@@ -1,14 +1,14 @@
-import type { FastifyInstance, FastifyRequest } from "fastify"
-import type { ZodTypeProvider } from "fastify-type-provider-zod"
-import type { z } from "zod"
-import { getPatientDataSchema } from "../../schema/schema"
-import { prisma } from "../../../prisma/db"
-import { NotFound } from "../_errors/route-error"
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import type { z } from "zod";
+import { getPatientDataSchema } from "../../schema/schema";
+import { prisma } from "../../../prisma/db";
+import { NotFound } from "../_errors/route-error";
 
 // Tipo ajustado para incluir ambos os parâmetros
 type ClinicalRecordParams = z.infer<typeof getPatientDataSchema> & {
-    recordId: number
-}
+    recordId: number;
+};
 
 /**
  * Verifica se o paciente existe pelo ID.
@@ -17,10 +17,10 @@ type ClinicalRecordParams = z.infer<typeof getPatientDataSchema> & {
 export async function checkPatientExists(id: string): Promise<void> {
     const patient = await prisma.patients.findUnique({
         where: { id },
-    })
+    });
 
     if (!patient) {
-        throw new NotFound("Paciente não encontrado")
+        throw new NotFound("Paciente não encontrado");
     }
 }
 
@@ -37,10 +37,10 @@ async function checkClinicalRecordExists(
             id: recordId,
             patientId,
         },
-    })
+    });
 
     if (!clinicalRecord) {
-        throw new NotFound("Registro clínico não encontrado")
+        throw new NotFound("Registro clínico não encontrado");
     }
 }
 
@@ -56,7 +56,7 @@ async function deleteRecord(
             patientId,
             id: recordId,
         },
-    })
+    });
 }
 
 /**
@@ -78,13 +78,13 @@ export async function deleteClinicalRecord(app: FastifyInstance) {
             request: FastifyRequest<{ Params: ClinicalRecordParams }>,
             reply
         ) => {
-            const { id, recordId } = request.params
+            const { id, recordId } = request.params;
 
-            await checkPatientExists(id)
-            await checkClinicalRecordExists(id, recordId)
-            await deleteRecord(id, recordId)
+            await checkPatientExists(id);
+            await checkClinicalRecordExists(id, recordId);
+            await deleteRecord(id, recordId);
 
-            return reply.status(204).send()
+            return reply.status(204).send();
         }
-    )
+    );
 }
