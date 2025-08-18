@@ -72,11 +72,7 @@ async function getAppointmentsLogic() {
         },
         sessions: appointment.sessions.map((session) => ({
             id: session.id,
-            appointmentDate: new Date(
-                session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-            )
-                .toISOString()
-                .replace("Z", "-03:00"), // Converte de UTC para UTC-3
+            appointmentDate: session.appointmentDate,
             duration: session.duration,
             status: session.status,
             sessionNumber: session.sessionNumber,

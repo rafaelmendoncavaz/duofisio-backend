@@ -46,18 +46,19 @@ function generateSessionDates(
 
 /**
  * Cria um novo agendamento com sessões associadas.
+ * Todas as datas são salvas em UTC, sem conversão de fuso horário.
  */
 async function createAppointmentLogic(
     patientId: string,
     employeeId: string,
     clinicalRecordId: string,
-    appointmentDate: Date, // Data inicial em UTC-3
+    appointmentDate: Date, // Data inicial em UTC
     duration: number,
     totalSessions: number,
     daysOfWeek?: number[] // Opcional
 ) {
-    // Ajustar "now" para UTC-3
-    const now = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
+    // Ajustar "now" para UTC
+    const now = new Date();
 
     // Validação de data futura ou atual
     if (isBefore(appointmentDate, now) && !isSameDay(appointmentDate, now)) {
@@ -86,14 +87,10 @@ async function createAppointmentLogic(
     // Criar as sessões associadas
     const sessions = await Promise.all(
         sessionDates.map((date, index) => {
-            const sessionDateUTC = new Date(
-                date.getTime() + 3 * 60 * 60 * 1000
-            ); // Converte para UTC
-
             return prisma.session.create({
                 data: {
                     appointmentId: appointment.id,
-                    appointmentDate: sessionDateUTC,
+                    appointmentDate: new Date(date),
                     duration,
                     sessionNumber: index + 1, // Começa em 1
                     status: "SOLICITADO",
@@ -102,20 +99,10 @@ async function createAppointmentLogic(
             });
         })
     );
-
-    // Converter as datas de volta para UTC-3 ao retornar
-    const sessionsInUtcMinus3 = sessions.map((session) => ({
-        ...session,
-        appointmentDate: new Date(
-            session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-        )
-            .toISOString()
-            .replace("Z", "-03:00"),
-    }));
-
+    
     return {
         appointmentId: appointment.id,
-        sessions: sessionsInUtcMinus3,
+        sessions
     };
 }
 

@@ -13,7 +13,7 @@ import {
  * Gera datas futuras para as sessões baseadas nos dias da semana e quantidade.
  */
 function generateSessionDates(
-    lastSessionDate: Date, // Data da última sessão em UTC-3
+    lastSessionDate: Date, // Data da última sessão em UTC
     lastSessionTime: { hours: number; minutes: number }, // Hora da última sessão
     totalSessions: number,
     daysOfWeek: number[]
@@ -79,17 +79,15 @@ async function repeatAppointmentLogic(
     const lastSession = originalAppointment.sessions.sort(
         (a, b) => b.appointmentDate.getTime() - a.appointmentDate.getTime()
     )[0];
-    const lastSessionDateUTC3 = new Date(
-        lastSession.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-    ); // Converte de UTC para UTC-3
+    const lastSessionDate = lastSession.appointmentDate
     const lastSessionTime = {
-        hours: lastSessionDateUTC3.getHours(),
-        minutes: lastSessionDateUTC3.getMinutes(),
+        hours: lastSessionDate.getUTCHours(),
+        minutes: lastSessionDate.getUTCMinutes(),
     };
 
     // Gera as datas das novas sessões
     const sessionDates = generateSessionDates(
-        lastSessionDateUTC3,
+        lastSessionDate,
         lastSessionTime,
         totalSessions,
         daysOfWeek
@@ -108,13 +106,10 @@ async function repeatAppointmentLogic(
     // Cria as novas sessões vinculadas ao novo Appointment
     const newSessions = await Promise.all(
         sessionDates.map((date, index) => {
-            const sessionDateUTC = new Date(
-                date.getTime() + 3 * 60 * 60 * 1000
-            ); // Converte para UTC
             return prisma.session.create({
                 data: {
                     appointmentId: newAppointment.id,
-                    appointmentDate: sessionDateUTC,
+                    appointmentDate: new Date(date),
                     duration: lastSession.duration, // Usa a duração da última sessão
                     sessionNumber: index + 1, // Começa em 1
                     status: "SOLICITADO",
@@ -124,19 +119,9 @@ async function repeatAppointmentLogic(
         })
     );
 
-    // Converte as datas de volta para UTC-3 ao retornar
-    const sessionsInUtcMinus3 = newSessions.map((session) => ({
-        ...session,
-        appointmentDate: new Date(
-            session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-        )
-            .toISOString()
-            .replace("Z", "-03:00"),
-    }));
-
     return {
         appointmentId: newAppointment.id,
-        sessionIds: sessionsInUtcMinus3.map((session) => session.id),
+        sessionIds: newSessions.map((session) => session.id),
     };
 }
 

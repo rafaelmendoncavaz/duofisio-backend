@@ -56,16 +56,9 @@ async function getSessionById(sessionId: string) {
         throw new NotFound("Sessão não encontrada");
     }
 
-    // Converte a data de UTC para UTC-3
-    const appointmentDateInUtcMinus3 = new Date(
-        session.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-    )
-        .toISOString()
-        .replace("Z", "-03:00");
-
     return {
         id: session.id,
-        appointmentDate: appointmentDateInUtcMinus3,
+        appointmentDate: session.appointmentDate,
         duration: session.duration,
         status: session.status,
         sessionNumber: session.sessionNumber,

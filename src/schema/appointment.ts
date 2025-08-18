@@ -120,7 +120,7 @@ export const statusGetAppointmentsSchema = {
                             z.literal("CANCELADO"),
                             z.literal("FINALIZADO"),
                         ]),
-                        appointmentDate: z.string(),
+                        appointmentDate: z.date(),
                         duration: z.number(),
                         progress: z.string().nullable(),
                     })

@@ -49,7 +49,7 @@ async function updateSessionLogic(
     };
 
     // Validações de data apenas se status não for "FINALIZADO"
-    const now = new Date(new Date().getTime() - 3 * 60 * 60 * 1000); // Ajustar para UTC-3
+    const now = new Date();
     if (
         updatedData.status !== "FINALIZADO" && // Ignora validação se status for FINALIZADO
         isBefore(updatedData.appointmentDate, now) &&
@@ -64,9 +64,7 @@ async function updateSessionLogic(
         updatedData.status === "CONFIRMADO" ||
         (updatedData.status === "CANCELADO" && !updates.appointmentDate)
             ? session.appointmentDate // Mantém a data original
-            : new Date(
-                  updatedData.appointmentDate.getTime() + 3 * 60 * 60 * 1000
-              ); // Converte para UTC
+            : new Date(updatedData.appointmentDate); 
 
     // Atualiza o Appointment se employeeId for fornecido e diferente do atual
     if (
@@ -89,25 +87,13 @@ async function updateSessionLogic(
             progress: updatedData.progress,
             appointment: {
                 update: {
-                    updatedAt: new Date(
-                        new Date().getTime() - 3 * 60 * 60 * 1000
-                    ),
+                    updatedAt: new Date(),
                 },
             },
         },
     });
 
-    // Converte a data de volta para UTC-3 ao retornar
-    const sessionInUtcMinus3 = {
-        ...updatedSession,
-        appointmentDate: new Date(
-            updatedSession.appointmentDate.getTime() - 3 * 60 * 60 * 1000
-        )
-            .toISOString()
-            .replace("Z", "-03:00"),
-    };
-
-    return sessionInUtcMinus3;
+    return updatedSession;
 }
 
 /**
