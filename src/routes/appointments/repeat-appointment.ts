@@ -8,6 +8,7 @@ import {
     repeatAppointmentSchema,
     statusRepeatAppointmentSchema,
 } from "../../schema/appointment";
+import { getUTCDay } from "../../utils/date";
 
 /**
  * Gera datas futuras para as sessões baseadas nos dias da semana e quantidade.
@@ -23,7 +24,7 @@ function generateSessionDates(
     let sessionsGenerated = 0;
 
     while (sessionsGenerated < totalSessions) {
-        const dayOfWeek = getDay(currentDate);
+        const dayOfWeek = getUTCDay(currentDate);
         if (daysOfWeek.includes(dayOfWeek)) {
             if (
                 !isBefore(currentDate, new Date()) ||
@@ -81,8 +82,8 @@ async function repeatAppointmentLogic(
     )[0];
     const lastSessionDate = lastSession.appointmentDate
     const lastSessionTime = {
-        hours: lastSessionDate.getUTCHours(),
-        minutes: lastSessionDate.getUTCMinutes(),
+        hours: lastSessionDate.getHours(),
+        minutes: lastSessionDate.getMinutes(),
     };
 
     // Gera as datas das novas sessões
@@ -109,7 +110,7 @@ async function repeatAppointmentLogic(
             return prisma.session.create({
                 data: {
                     appointmentId: newAppointment.id,
-                    appointmentDate: new Date(date),
+                    appointmentDate: date,
                     duration: lastSession.duration, // Usa a duração da última sessão
                     sessionNumber: index + 1, // Começa em 1
                     status: "SOLICITADO",

@@ -8,6 +8,7 @@ import {
     updateAppointmentSchema,
     statusUpdateAppointmentSchema,
 } from "../../schema/appointment";
+import { isSameUTCDay } from "../../utils/date";
 
 /**
  * Atualiza uma sessão específica de um agendamento existente e, se necessário, o funcionário no Appointment.
@@ -51,9 +52,10 @@ async function updateSessionLogic(
     // Validações de data apenas se status não for "FINALIZADO"
     const now = new Date();
     if (
-        updatedData.status !== "FINALIZADO" && // Ignora validação se status for FINALIZADO
-        isBefore(updatedData.appointmentDate, now) &&
-        !isSameDay(updatedData.appointmentDate, now)
+        updatedData.status !== "FINALIZADO" &&
+        updatedData.appointmentDate &&
+        updatedData.appointmentDate < now &&
+        !isSameUTCDay(updatedData.appointmentDate, now)
     ) {
         throw new BadRequest("A data da sessão deve ser hoje ou no futuro");
     }
@@ -64,7 +66,7 @@ async function updateSessionLogic(
         updatedData.status === "CONFIRMADO" ||
         (updatedData.status === "CANCELADO" && !updates.appointmentDate)
             ? session.appointmentDate // Mantém a data original
-            : new Date(updatedData.appointmentDate); 
+            : updatedData.appointmentDate; 
 
     // Atualiza o Appointment se employeeId for fornecido e diferente do atual
     if (

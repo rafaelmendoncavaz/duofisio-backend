@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { z } from "zod";
 import { prisma } from "../../../prisma/db";
 import { statusGetAppointmentsSchema } from "../../schema/appointment";
+import { formatToISOString } from "../../utils/date"; 
 
 /**
  * Busca todos os agendamentos com suas sessões, sem filtros de data.
@@ -53,8 +54,8 @@ async function getAppointmentsLogic() {
     return appointments.map((appointment) => ({
         id: appointment.id,
         totalSessions: appointment.totalSessions,
-        createdAt: appointment.createdAt,
-        updatedAt: appointment.updatedAt,
+        createdAt: formatToISOString(appointment.createdAt),
+        updatedAt: formatToISOString(appointment.updatedAt),
         patient: {
             id: appointment.patient.id,
             name: appointment.patient.name,
@@ -72,7 +73,7 @@ async function getAppointmentsLogic() {
         },
         sessions: appointment.sessions.map((session) => ({
             id: session.id,
-            appointmentDate: session.appointmentDate,
+            appointmentDate: formatToISOString(session.appointmentDate),
             duration: session.duration,
             status: session.status,
             sessionNumber: session.sessionNumber,

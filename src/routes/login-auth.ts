@@ -71,8 +71,8 @@ export async function loginAuth(app: FastifyInstance) {
                     .setCookie("dfauth", token, {
                         path: "/",
                         httpOnly: true,
-                        sameSite: "none",
-                        secure: process.env.NODE_ENV === "production" || false,
+                        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+                        secure: process.env.NODE_ENV === "production",
                         maxAge: 7 * 24 * 60 * 60,
                         signed: true,
                     })

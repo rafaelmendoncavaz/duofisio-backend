@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../../../prisma/db";
 import { NotFound } from "../_errors/route-error";
 import { statusGetSinglePatientAppointments } from "../../schema/appointment";
+import { formatToISOString } from "../../utils/date"
 
 /**
  * Busca os detalhes de uma sessão específica.
@@ -58,7 +59,7 @@ async function getSessionById(sessionId: string) {
 
     return {
         id: session.id,
-        appointmentDate: session.appointmentDate,
+        appointmentDate: formatToISOString(session.appointmentDate),
         duration: session.duration,
         status: session.status,
         sessionNumber: session.sessionNumber,
@@ -66,8 +67,8 @@ async function getSessionById(sessionId: string) {
         appointment: {
             id: session.appointment.id,
             totalSessions: session.appointment.totalSessions,
-            createdAt: session.appointment.createdAt,
-            updatedAt: session.appointment.updatedAt,
+            createdAt: formatToISOString(session.appointment.createdAt),
+            updatedAt: formatToISOString(session.appointment.updatedAt),
             patient: {
                 patientId: session.appointment.patient.id,
                 name: session.appointment.patient.name,

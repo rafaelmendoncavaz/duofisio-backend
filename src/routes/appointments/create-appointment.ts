@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { z } from "zod";
-import { isBefore, isSameDay, addDays, getDay } from "date-fns";
+import { isBefore, isSameDay, addDays, getDay, parseISO, isValid } from "date-fns";
 import { prisma } from "../../../prisma/db";
 import { BadRequest } from "../_errors/route-error";
 import {
@@ -13,7 +13,7 @@ import {
  * Gera datas para as sessões baseadas nos dias da semana e quantidade total.
  */
 function generateSessionDates(
-    startDate: Date, // Data inicial em UTC-3
+    startDate: Date, // Data inicial em UTC (instante).
     totalSessions: number,
     daysOfWeek?: number[] // Opcional
 ): Date[] {
@@ -52,7 +52,7 @@ async function createAppointmentLogic(
     patientId: string,
     employeeId: string,
     clinicalRecordId: string,
-    appointmentDate: Date, // Data inicial em UTC
+    appointmentDate: Date, // Data inicial em UTC (Date object)
     duration: number,
     totalSessions: number,
     daysOfWeek?: number[] // Opcional
@@ -90,7 +90,7 @@ async function createAppointmentLogic(
             return prisma.session.create({
                 data: {
                     appointmentId: appointment.id,
-                    appointmentDate: new Date(date),
+                    appointmentDate: date, 
                     duration,
                     sessionNumber: index + 1, // Começa em 1
                     status: "SOLICITADO",
@@ -138,11 +138,16 @@ export async function createAppointment(app: FastifyInstance) {
                 clinicalRecordId,
             } = request.body;
 
+            const parsedAppointmentDate = parseISO(appointmentDate);
+            if (!isValid(parsedAppointmentDate)) {
+                throw new BadRequest("appointmentDate inválido. Envie uma string ISO válida.");
+            }
+
             const result = await createAppointmentLogic(
                 patientId,
                 employeeId,
                 clinicalRecordId,
-                new Date(appointmentDate),
+                parsedAppointmentDate,
                 duration,
                 totalSessions,
                 daysOfWeek // Pode ser undefined

@@ -211,8 +211,7 @@ async function seed() {
     }
 
     // Agendamentos com Sessões
-    const baseDate = startOfDay(new Date()); // Hoje em UTC-3
-    const baseDateUtcMinus3 = new Date(baseDate.getTime() - 3 * 60 * 60 * 1000);
+    const baseDate = startOfDay(new Date()); // Hoje em UTC
 
     // Agendamento 1: João Silva (3 sessões às segundas e quintas)
     const appointment1 = await prisma.appointment.create({
@@ -226,7 +225,7 @@ async function seed() {
     });
 
     const sessionDates1 = generateSessionDates(
-        set(baseDateUtcMinus3, { hours: 9, minutes: 0 }),
+        set(baseDate, { hours: 9, minutes: 0 }),
         3,
         [1, 4] // Segunda e Quinta
     );
@@ -235,7 +234,7 @@ async function seed() {
         data: sessionDates1.map((date, index) => ({
             id: `550e8400-e29b-41d4-a716-44665544005${index + 1}`,
             appointmentId: appointment1.id,
-            appointmentDate: new Date(date.getTime() + 3 * 60 * 60 * 1000), // Converte para UTC
+            appointmentDate: date,
             duration: 60,
             sessionNumber: index + 1,
             status: index === 0 ? "FINALIZADO" : "SOLICITADO",
@@ -255,7 +254,7 @@ async function seed() {
     });
 
     const sessionDates2 = generateSessionDates(
-        set(addDays(baseDateUtcMinus3, 1), { hours: 10, minutes: 30 }),
+        set(addDays(baseDate, 1), { hours: 10, minutes: 30 }),
         2,
         [2] // Terça
     );
@@ -264,7 +263,7 @@ async function seed() {
         data: sessionDates2.map((date, index) => ({
             id: `550e8400-e29b-41d4-a716-44665544006${index + 1}`,
             appointmentId: appointment2.id,
-            appointmentDate: new Date(date.getTime() + 3 * 60 * 60 * 1000), // Converte para UTC
+            appointmentDate: date,
             duration: 30,
             sessionNumber: index + 1,
             status: "SOLICITADO",
@@ -284,7 +283,7 @@ async function seed() {
     });
 
     const sessionDates3 = generateSessionDates(
-        set(addDays(baseDateUtcMinus3, 2), { hours: 14, minutes: 0 }),
+        set(addDays(baseDate, 2), { hours: 14, minutes: 0 }),
         4,
         [3, 5] // Quarta e Sexta
     );
@@ -293,7 +292,7 @@ async function seed() {
         data: sessionDates3.map((date, index) => ({
             id: `550e8400-e29b-41d4-a716-44665544007${index + 1}`,
             appointmentId: appointment3.id,
-            appointmentDate: new Date(date.getTime() + 3 * 60 * 60 * 1000), // Converte para UTC
+            appointmentDate: date,
             duration: 90,
             sessionNumber: index + 1,
             status: index === 0 ? "CONFIRMADO" : "SOLICITADO",

@@ -4,7 +4,7 @@ import { z } from "zod";
  * Schema para criar um novo agendamento.
  */
 export const createAppointmentSchema = z.object({
-    appointmentDate: z.string().datetime({ offset: true }),
+    appointmentDate: z.string().datetime(),
     duration: z
         .number()
         .min(30, "A duração mínima é 30 minutos")
@@ -93,8 +93,8 @@ export const statusGetAppointmentsSchema = {
             z.object({
                 id: z.string().uuid("ID do agendamento deve ser um UUID"),
                 totalSessions: z.number(),
-                createdAt: z.date(),
-                updatedAt: z.date(),
+                createdAt: z.string().datetime(),
+                updatedAt: z.string().datetime(),
                 patient: z.object({
                     id: z.string().uuid("ID do paciente deve ser um UUID"),
                     name: z.string(),
@@ -120,7 +120,7 @@ export const statusGetAppointmentsSchema = {
                             z.literal("CANCELADO"),
                             z.literal("FINALIZADO"),
                         ]),
-                        appointmentDate: z.date(),
+                        appointmentDate: z.string().datetime(),
                         duration: z.number(),
                         progress: z.string().nullable(),
                     })
@@ -140,7 +140,7 @@ export const statusGetSinglePatientAppointments = {
     200: z.object({
         session: z.object({
             id: z.string().uuid("ID do agendamento deve ser um UUID"),
-            appointmentDate: z.string(),
+            appointmentDate: z.string().datetime(),
             duration: z.number(),
             status: z.union([
                 z.literal("SOLICITADO"),
@@ -153,8 +153,8 @@ export const statusGetSinglePatientAppointments = {
             appointment: z.object({
                 id: z.string().uuid("ID do agendamento deve ser um UUID"),
                 totalSessions: z.number(),
-                createdAt: z.date(),
-                updatedAt: z.date(),
+                createdAt: z.string().datetime(),
+                updatedAt: z.string().datetime(),
                 patient: z.object({
                     patientId: z
                         .string()
@@ -190,7 +190,7 @@ export const statusGetSinglePatientAppointments = {
  * Schema para atualizar um agendamento.
  */
 export const updateAppointmentSchema = z.object({
-    appointmentDate: z.string().datetime({ offset: true }).optional(),
+    appointmentDate: z.string().datetime().optional(),
     duration: z
         .number()
         .min(30, "A duração mínima é 30 minutos")

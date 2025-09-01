@@ -98,8 +98,8 @@ async function configurePlugins() {
         cookieOpts: {
             path: "/",
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production" || false,
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         },
         getToken: (request: FastifyRequest) =>
             request.headers["x-csrf-token"]?.toString() || "",
@@ -141,7 +141,7 @@ async function configurePlugins() {
     });
 
     await app.register(cors, {
-        origin: process.env.FRONTEND_URL || true,
+        origin: process.env.FRONTEND_URL,
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "X-CSRF-Token"],
