@@ -40,6 +40,11 @@ import { getAppointments } from "../routes/appointments/get-appointments";
 import { getAppointment } from "../routes/appointments/get-appointment";
 import { updateAppointment } from "../routes/appointments/update-appointment";
 import { deleteAppointment } from "../routes/appointments/delete-appointment";
+import { createEmployee } from "../routes/employees/create-employee";
+import { getEmployees } from "../routes/employees/get-employees";
+import { getEmployee } from "../routes/employees/get-employee";
+import { updateEmployee } from "../routes/employees/update-employee";
+import { deleteEmployee } from "../routes/employees/delete-employee";
 
 // Middlewares e Handlers
 import { errorHandler } from "../routes/_errors/error-handler";
@@ -189,6 +194,13 @@ function registerProtectedRoutes() {
     app.register(
         async (protectedRoutes: FastifyInstance) => {
             protectedRoutes.addHook("preHandler", app.authenticate);
+
+            // Employee Routes
+            protectedRoutes.register(createEmployee);
+            protectedRoutes.register(getEmployees);
+            protectedRoutes.register(getEmployee);
+            protectedRoutes.register(updateEmployee);
+            protectedRoutes.register(deleteEmployee);
 
             // Patient Routes
             protectedRoutes.register(addPatient);

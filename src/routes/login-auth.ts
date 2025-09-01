@@ -10,16 +10,6 @@ export async function loginAuth(app: FastifyInstance) {
         "/login",
         {
             preHandler: [
-                async (request, reply) => {
-                    console.log(
-                        "PreHandler - Header X-CSRF-Token:",
-                        request.headers["x-csrf-token"]
-                    );
-                    console.log(
-                        "PreHandler - Cookie csrfToken:",
-                        request.cookies.csrfToken
-                    );
-                },
                 app.csrfProtection,
             ],
             schema: {
@@ -30,7 +20,6 @@ export async function loginAuth(app: FastifyInstance) {
             },
         },
         async (request, reply) => {
-            console.log("Handler - Chegou aqui!");
             const { email, password } = request.body;
 
             try {

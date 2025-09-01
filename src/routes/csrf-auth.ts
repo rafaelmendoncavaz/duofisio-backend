@@ -15,10 +15,6 @@ export async function csrfAuth(app: FastifyInstance) {
         async (request, reply) => {
             try {
                 const token = await reply.generateCsrf();
-                const secret = request.cookies.csrfToken || "N/A";
-
-                console.log("CSRF Secret gerado:", secret);
-                console.log("CSRF Token gerado:", token);
 
                 return reply.status(201).send({ csrfToken: token });
             } catch (error) {

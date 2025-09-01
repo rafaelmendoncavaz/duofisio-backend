@@ -10,6 +10,7 @@
     "postinstall": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:clear": "tsx prisma/clear.ts",
     "biome:lint": "biome lint",
     "biome:format": "biome format"
   },

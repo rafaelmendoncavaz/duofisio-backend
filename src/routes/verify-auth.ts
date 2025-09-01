@@ -11,6 +11,7 @@ async function getUserById(userId: string) {
         select: {
             id: true,
             name: true,
+            isAdmin: true,
             appointments: {
                 select: {
                     id: true,

@@ -1,5 +1,7 @@
 node_modules/
 .vscode/
+prisma/seed.ts
+prisma/clear.ts
 
 .env
 .env.example

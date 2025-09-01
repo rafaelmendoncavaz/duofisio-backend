@@ -44,6 +44,7 @@ export const verifyAuthSchema = {
         user: z.object({
             name: z.string(),
             id: z.string().uuid(),
+            isAdmin: z.boolean(),
             appointments: z.array(
                 z.object({
                     id: z.string().uuid(),

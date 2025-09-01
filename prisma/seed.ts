@@ -4,7 +4,7 @@ import { startOfDay, addDays, set, getDay } from "date-fns";
 
 async function seed() {
     // Limpa todas as tabelas para evitar duplicatas
-    await prisma.session.deleteMany(); // Adicionado para limpar sessões
+    await prisma.session.deleteMany();
     await prisma.appointment.deleteMany();
     await prisma.clinicalData.deleteMany();
     await prisma.adultResponsible.deleteMany();
@@ -26,6 +26,7 @@ async function seed() {
             name: "Rafael",
             email: process.env.RAFAEL_EMAIL as string,
             password: rafaPassword,
+            isAdmin: true,
         },
     });
 
@@ -45,6 +46,7 @@ async function seed() {
                 name: "Dennis",
                 email: process.env.DENNIS_EMAIL as string,
                 password: dennisPassword,
+                isAdmin: true,
             },
             {
                 id: crypto.randomUUID(),
