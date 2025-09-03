@@ -32,7 +32,7 @@ export async function getEmployee(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
         "/employee/:id",
         {
-            preHandler: [app.csrfProtection, app.authenticate],
+            preHandler: [app.authenticate],
             schema: {
                 tags: ["Employees"],
                 summary: "Get a specific employee",
@@ -51,8 +51,7 @@ export async function getEmployee(app: FastifyInstance) {
         ) => {
             const { id } = request.params;
             const employee = await getEmployeeLogic(id);
-            
-            return reply.status(200).send({ employee });
+            return reply.status(200).send(employee);
         }
     );
 }

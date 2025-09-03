@@ -75,8 +75,12 @@ export const verifyAuthSchema = {
         }),
         employees: z.array(
             z.object({
-                name: z.string(),
                 id: z.string().uuid(),
+                name: z.string(),
+                email: z.string().email(),
+                isAdmin: z.boolean(),
+                createdAt: z.string().datetime(),
+                updatedAt: z.string().datetime(),
             })
         ),
     }),

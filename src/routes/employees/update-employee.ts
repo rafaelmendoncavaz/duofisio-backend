@@ -26,8 +26,11 @@ async function updateEmployeeLogic(
     
     if (checkForPrivileges) {
         if (!checkForPrivileges.isAdmin)
-            throw new Unauthorized("Voce nao possui privilegios para criar um novo usuario!");
+            throw new Unauthorized("Voce nao possui privilegios para atualizar um usuario!");
     }
+
+    if (userId === id && !updates.isAdmin)
+        throw new BadRequest("Voce nao pode retirar seus proprios privilegios!");
 
     const employee = await prisma.employees.findUnique({
         where: {
@@ -62,7 +65,7 @@ async function updateEmployeeLogic(
  * Registra a rota para atualizar um funcionario existente.
  */
 export async function updateEmployee(app: FastifyInstance) {
-    app.withTypeProvider<ZodTypeProvider>().put(
+    app.withTypeProvider<ZodTypeProvider>().patch(
         "/employee/:id",
         {
             preHandler: [app.csrfProtection, app.authenticate],
@@ -93,9 +96,9 @@ export async function updateEmployee(app: FastifyInstance) {
                 isAdmin: boolean,
             }> = {};
 
-            if (email) updates.email = email;
-            if (password) updates.password = await hash(password, 6);
-            if (isAdmin) updates.isAdmin = isAdmin;
+            if (email !== undefined) updates.email = email;
+            if (password !== undefined) updates.password = await hash(password, 6);
+            if (isAdmin !== undefined) updates.isAdmin = isAdmin;
 
             await updateEmployeeLogic(userId, id, updates);
 

@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { prisma } from "../../prisma/db";
 import { verifyAuthSchema } from "../schema/auth";
 import { NotFound, Unauthorized } from "./_errors/route-error";
+import { formatToISOString } from "../utils/date";
 
 async function getUserById(userId: string) {
     const user = await prisma.employees.findUnique({
@@ -47,12 +48,23 @@ async function getUserById(userId: string) {
 async function getEmployees() {
     const employees = await prisma.employees.findMany({
         select: {
-            name: true,
             id: true,
+            name: true,
+            email: true,
+            isAdmin: true,
+            createdAt: true,
+            updatedAt: true,
         },
     });
 
-    return employees;
+    return employees.map((employee) => ({
+        id: employee.id,
+        name: employee.name,
+        email: employee.email,
+        isAdmin: employee.isAdmin,
+        createdAt: formatToISOString(employee.createdAt),
+        updatedAt: formatToISOString(employee.updatedAt),
+    }));
 }
 
 export const verifyAuth: FastifyPluginAsync = async (app) => {

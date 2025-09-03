@@ -39,7 +39,7 @@ export async function getEmployees(app: FastifyInstance) {
     app.withTypeProvider<ZodTypeProvider>().get(
         "/employee",
         {
-            preHandler: [app.csrfProtection, app.authenticate],
+            preHandler: [app.authenticate],
             schema: {
                 tags: ["Employees"],
                 summary: "Get a list of employees",

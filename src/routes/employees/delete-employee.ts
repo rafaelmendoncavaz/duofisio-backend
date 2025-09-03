@@ -26,6 +26,9 @@ async function deleteEmployeesLogic(userId: string, id: string) {
     if (checkForAdmin) {
         if (checkForAdmin.isAdmin)
             throw new BadRequest("Voce nao pode deletar um outro usuario admin!");
+        if (checkForAdmin.id === userId) {
+            throw new BadRequest("Voce nao pode deletar seu proprio usuario!");
+        }
     }
     
     // Transferir agendamentos do usuario a ser deletado para o usuario que esta deletando
