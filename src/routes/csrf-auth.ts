@@ -18,7 +18,7 @@ export async function csrfAuth(app: FastifyInstance) {
 
                 return reply.status(201).send({ csrfToken: token });
             } catch (error) {
-                app.log.error("Erro ao gerar CSRF Token: ", error);
+                app.log.error("Erro ao gerar CSRF Token");
                 return reply
                     .status(500)
                     .send({ message: "Erro ao gerar CSRF Token" });

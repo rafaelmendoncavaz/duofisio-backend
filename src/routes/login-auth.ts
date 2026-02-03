@@ -71,13 +71,13 @@ export async function loginAuth(app: FastifyInstance) {
                     });
             } catch (error) {
                 if (error instanceof NotFound) {
-                    return reply.status(404).send({
+                    return reply.send({
                         message: error.message,
                     });
                 }
 
                 if (error instanceof Unauthorized) {
-                    return reply.status(401).send({
+                    return reply.send({
                         message: error.message,
                     });
                 }
