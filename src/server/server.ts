@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import fastify, {
-    type FastifyInstance,
-    type FastifyReply,
-    type FastifyRequest,
+	type FastifyInstance,
+	type FastifyReply,
+	type FastifyRequest,
 } from "fastify";
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
@@ -13,10 +13,10 @@ import rateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import {
-    jsonSchemaTransform,
-    serializerCompiler,
-    validatorCompiler,
-    type ZodTypeProvider,
+	jsonSchemaTransform,
+	serializerCompiler,
+	validatorCompiler,
+	type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { BadRequest } from "../routes/_errors/route-error";
 
@@ -53,7 +53,7 @@ dotenv.config();
 
 // Inicialização do aplicativo Fastify com suporte a Zod
 export const app: FastifyInstance = fastify({
-    logger: true,
+	logger: true,
 }).withTypeProvider<ZodTypeProvider>();
 
 // Configuração de serialização e validação com Zod
@@ -63,187 +63,187 @@ app.setErrorHandler(errorHandler);
 
 // Decorador para verificar a autenticação via cookie
 app.decorate(
-    "authenticate",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-        try {
-            const token = request.cookies.dfauth;
+	"authenticate",
+	async (request: FastifyRequest, reply: FastifyReply) => {
+		try {
+			const token = request.cookies.dfauth;
 
-            if (!token) {
-                throw new BadRequest("Token não fornecido");
-            }
+			if (!token) {
+				throw new BadRequest("Token não fornecido");
+			}
 
-            await request.jwtVerify({ onlyCookie: true });
-        } catch (error) {
-            reply.status(401).send({
-                message: "Não Autorizado",
-            });
-            throw error;
-        }
-    }
+			await request.jwtVerify({ onlyCookie: true });
+		} catch (error) {
+			reply.status(401).send({
+				message: "Não Autorizado",
+			});
+			throw error;
+		}
+	},
 );
 
 /**
  * Configura os plugins do Fastify (Swagger, CORS, CSRF, JWT, Cookie e Helmet).
  */
 async function configurePlugins() {
-    await app.register(cookie, {
-        secret: process.env.SIGN_COOKIE as string,
-    });
+	await app.register(cookie, {
+		secret: process.env.SIGN_COOKIE as string,
+	});
 
-    await app.register(jwt, {
-        secret: process.env.JWT_SECRET as string,
-        cookie: {
-            cookieName: "dfauth",
-            signed: true,
-        },
-    });
+	await app.register(jwt, {
+		secret: process.env.JWT_SECRET as string,
+		cookie: {
+			cookieName: "dfauth",
+			signed: true,
+		},
+	});
 
-    await app.register(csrf, {
-        cookieKey: "csrfToken",
-        cookieOpts: {
-            path: "/",
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        },
-        getToken: (request: FastifyRequest) =>
-            request.headers["x-csrf-token"]?.toString() || "",
-    });
+	await app.register(csrf, {
+		cookieKey: "csrfToken",
+		cookieOpts: {
+			path: "/",
+			httpOnly: true,
+			secure: process.env.NODE_ENV === "production",
+			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+		},
+		getToken: (request: FastifyRequest) =>
+			request.headers["x-csrf-token"]?.toString() || "",
+	});
 
-    await app.register(helmet, {
-        contentSecurityPolicy: {
-            directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'"],
-            },
-        },
-        xFrameOptions: {
-            action: "deny",
-        },
-        xXssProtection: true,
-        xDnsPrefetchControl: {
-            allow: false,
-        },
-        referrerPolicy: {
-            policy: "no-referrer",
-        },
-    });
+	await app.register(helmet, {
+		contentSecurityPolicy: {
+			directives: {
+				defaultSrc: ["'self'"],
+				scriptSrc: ["'self'", "'unsafe-inline'"],
+			},
+		},
+		xFrameOptions: {
+			action: "deny",
+		},
+		xXssProtection: true,
+		xDnsPrefetchControl: {
+			allow: false,
+		},
+		referrerPolicy: {
+			policy: "no-referrer",
+		},
+	});
 
-    await app.register(rateLimit, {
-        max: 5,
-        timeWindow: "10 minutes",
-        keyGenerator: (request) => {
-            return request.ip;
-        },
-        errorResponseBuilder: (_request, context) => {
-            return {
-                statusCode: 429,
-                error: "Too Many Requests",
-                message: `Limite de tentativas excedido. Tente novamente em ${context.after} segundos`,
-            };
-        },
-        allowList: (request) => !request.url.includes("/auth/login"),
-    });
+	await app.register(rateLimit, {
+		max: 5,
+		timeWindow: "10 minutes",
+		keyGenerator: (request) => {
+			return request.ip;
+		},
+		errorResponseBuilder: (_request, context) => {
+			return {
+				statusCode: 429,
+				error: "Too Many Requests",
+				message: `Limite de tentativas excedido. Tente novamente em ${context.after} segundos`,
+			};
+		},
+		allowList: (request) => !request.url.includes("/auth/login"),
+	});
 
-    await app.register(cors, {
-        origin: process.env.FRONTEND_URL,
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "X-CSRF-Token"],
-    });
+	await app.register(cors, {
+		origin: process.env.FRONTEND_URL,
+		credentials: true,
+		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+	});
 
-    await app.register(fastifySwagger, {
-        openapi: {
-            info: {
-                title: "Duofisio Clinic API",
-                description: "Documentation for Duofisio Clinic API Routes",
-                version: "1.0.0",
-            },
-            components: {
-                securitySchemes: {
-                    cookieAuth: {
-                        type: "apiKey",
-                        in: "cookie",
-                        name: "dfauth",
-                    },
-                },
-            },
-        },
-        transform: jsonSchemaTransform,
-    });
+	await app.register(fastifySwagger, {
+		openapi: {
+			info: {
+				title: "Duofisio Clinic API",
+				description: "Documentation for Duofisio Clinic API Routes",
+				version: "1.0.0",
+			},
+			components: {
+				securitySchemes: {
+					cookieAuth: {
+						type: "apiKey",
+						in: "cookie",
+						name: "dfauth",
+					},
+				},
+			},
+		},
+		transform: jsonSchemaTransform,
+	});
 
-    await app.register(fastifySwaggerUi, {
-        routePrefix: "/api",
-    });
+	await app.register(fastifySwaggerUi, {
+		routePrefix: "/api",
+	});
 }
 
 /**
  * Registra as rotas públicas (não requerem autenticação).
  */
 function registerPublicRoutes() {
-    app.register(loginAuth, { prefix: "/auth" });
-    app.register(logOut, { prefix: "/auth" });
-    app.register(verifyAuth, { prefix: "/auth" });
-    app.register(csrfAuth, { prefix: "/auth" });
+	app.register(loginAuth, { prefix: "/auth" });
+	app.register(logOut, { prefix: "/auth" });
+	app.register(verifyAuth, { prefix: "/auth" });
+	app.register(csrfAuth, { prefix: "/auth" });
 }
 
 /**
  * Registra as rotas protegidas (requerem autenticação JWT via cookie).
  */
 function registerProtectedRoutes() {
-    app.register(
-        async (protectedRoutes: FastifyInstance) => {
-            protectedRoutes.addHook("preHandler", app.authenticate);
+	app.register(
+		async (protectedRoutes: FastifyInstance) => {
+			protectedRoutes.addHook("preHandler", app.authenticate);
 
-            // Employee Routes
-            protectedRoutes.register(createEmployee);
-            protectedRoutes.register(getEmployees);
-            protectedRoutes.register(getEmployee);
-            protectedRoutes.register(updateEmployee);
-            protectedRoutes.register(deleteEmployee);
+			// Employee Routes
+			protectedRoutes.register(createEmployee);
+			protectedRoutes.register(getEmployees);
+			protectedRoutes.register(getEmployee);
+			protectedRoutes.register(updateEmployee);
+			protectedRoutes.register(deleteEmployee);
 
-            // Patient Routes
-            protectedRoutes.register(addPatient);
-            protectedRoutes.register(getPatients);
-            protectedRoutes.register(getPatient);
-            protectedRoutes.register(updatePatient);
-            protectedRoutes.register(deletePatient);
+			// Patient Routes
+			protectedRoutes.register(addPatient);
+			protectedRoutes.register(getPatients);
+			protectedRoutes.register(getPatient);
+			protectedRoutes.register(updatePatient);
+			protectedRoutes.register(deletePatient);
 
-            // Clinical Record Routes
-            protectedRoutes.register(addClinicalRecord);
-            protectedRoutes.register(getClinicalRecords);
-            protectedRoutes.register(getSingleClinicalRecord);
-            protectedRoutes.register(deleteClinicalRecord);
+			// Clinical Record Routes
+			protectedRoutes.register(addClinicalRecord);
+			protectedRoutes.register(getClinicalRecords);
+			protectedRoutes.register(getSingleClinicalRecord);
+			protectedRoutes.register(deleteClinicalRecord);
 
-            // Appointment Routes
-            protectedRoutes.register(createAppointment);
-            protectedRoutes.register(repeatAppointment);
-            protectedRoutes.register(getAppointments);
-            protectedRoutes.register(getAppointment);
-            protectedRoutes.register(updateAppointment);
-            protectedRoutes.register(deleteAppointment);
-        },
-        { prefix: "/dashboard" }
-    );
+			// Appointment Routes
+			protectedRoutes.register(createAppointment);
+			protectedRoutes.register(repeatAppointment);
+			protectedRoutes.register(getAppointments);
+			protectedRoutes.register(getAppointment);
+			protectedRoutes.register(updateAppointment);
+			protectedRoutes.register(deleteAppointment);
+		},
+		{ prefix: "/dashboard" },
+	);
 }
 
 /**
  * Inicia o servidor na porta especificada.
  */
 async function start() {
-    await configurePlugins();
-    registerPublicRoutes();
-    registerProtectedRoutes();
+	await configurePlugins();
+	registerPublicRoutes();
+	registerProtectedRoutes();
 
-    const port = Number.parseInt(process.env.PORT || "3000", 10);
-    const host = "0.0.0.0";
+	const port = Number.parseInt(process.env.PORT || "3000", 10);
+	const host = "0.0.0.0";
 
-    await app.listen({ port, host });
-    app.log.info(`Server is running on port ${port}`);
+	await app.listen({ port, host });
+	app.log.info(`Server is running on port ${port}`);
 }
 
 // Inicialização do servidor
 start().catch((error) => {
-    app.log.error(error);
-    process.exit(1);
+	app.log.error(error);
+	process.exit(1);
 });
